@@ -1,6 +1,11 @@
 import 'package:flutter/material.dart';
 import 'package:curved_navigation_bar/curved_navigation_bar.dart';
+import 'package:loginappv2/src/commom_widgets/widgets/change_dashboard.dart';
+import 'package:loginappv2/src/features/payment/esewa_pay.dart';
+import 'package:loginappv2/src/features/properties/screens/dashboard.dart';
+import 'package:loginappv2/src/features/properties/screens/property_list_screen.dart';
 import 'package:loginappv2/src/features/user_dashboard/screens/addexpensescreen.dart';
+import 'package:loginappv2/src/features/user_dashboard/screens/map/map_screen.dart';
 
 class UserDashboard extends StatefulWidget {
   const UserDashboard({super.key});
@@ -13,15 +18,15 @@ class _UserDashboardState extends State<UserDashboard> {
   final GlobalKey<CurvedNavigationBarState> _bottomNavigationKey = GlobalKey();
   int _page = 0;
 
-  // Placeholder pages list (widgets corresponding to the nav bar icons)
+  // The CORRECTED pages list (5 items for 5 icons)
   final List<Widget> _pages = [
-    // ------------------------------------
-    const AddExpensePage(), // <<< NEW WIDGET
-    // ------------------------------------
-    const Center(child: Text('Page 2: List', style: TextStyle(color: Colors.white, fontSize: 32))),
-    const Center(child: Text('Page 3: Compare', style: TextStyle(color: Colors.white, fontSize: 32))),
-    const Center(child: Text('Page 4: Split', style: TextStyle(color: Colors.white, fontSize: 32))),
-    const Center(child: Text('Page 5: Profile', style: TextStyle(color: Colors.white, fontSize: 32))),
+    // Index 0: Icons.add
+
+    const Mapspage(),// Index 0
+    const EsewaApp(title: 'esewa Aayush',),// Index 1
+    const dashboard(),// Index 2
+    const PropertyListScreen(),// Index 3
+    const RoomListingWidget(),
   ];
 
   @override
@@ -30,12 +35,13 @@ class _UserDashboardState extends State<UserDashboard> {
         bottomNavigationBar: CurvedNavigationBar(
           key: _bottomNavigationKey,
           index: _page,
+          // Your 5 icons
           items: const <Widget>[
-            Icon(Icons.add, size: 30),
-            Icon(Icons.list, size: 30),
-            Icon(Icons.compare_arrows, size: 30),
-            Icon(Icons.call_split, size: 30),
+            Icon(Icons.maps_home_work_outlined, size: 30),
+            Icon(Icons.message_outlined, size: 30),
             Icon(Icons.perm_identity, size: 30),
+            Icon(Icons.help_outline_outlined, size: 30),
+            Icon(Icons.logout_outlined, size: 30),
           ],
           color: Colors.white,
           buttonBackgroundColor: Colors.white,
@@ -55,23 +61,21 @@ class _UserDashboardState extends State<UserDashboard> {
             child: Column(
               mainAxisAlignment: MainAxisAlignment.center,
               children: <Widget>[
-                // The current page widget is now correctly inserted here
-                // Note: We remove the programmatic button control from the page content
-                // so the new page widget is the only thing displayed.
+                // Wrap the page in Expanded so it fills the available space
                 Expanded(
                   child: _pages[_page],
                 ),
 
-                // Button to demonstrate programmatic control using the key
-                ElevatedButton(
-                  child: const Text('Go To Page of index 1'),
-                  onPressed: () {
-                    final CurvedNavigationBarState? navBarState =
-                        _bottomNavigationKey.currentState;
-                    navBarState?.setPage(1);
-                  },
-                ),
-                // Added padding for the button
+                // Button to demonstrate programmatic control
+                // ElevatedButton(
+                //   child: const Text('Go To Page of index 1 (Map View)'),
+                //   onPressed: () {
+                //     final CurvedNavigationBarState? navBarState =
+                //         _bottomNavigationKey.currentState;
+                //     // This will now navigate to MapViewPage
+                //     navBarState?.setPage(1);
+                //   },
+                // ),
                 const SizedBox(height: 50),
               ],
             ),

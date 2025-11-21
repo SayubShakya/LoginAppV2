@@ -1,0 +1,29 @@
+{
+  "project_info": {
+    "project_number": "329333032806",
+    "project_id": "ghar-sathi",
+    "storage_bucket": "ghar-sathi.firebasestorage.app"
+  },
+  "client": [
+    {
+      "client_info": {
+        "mobilesdk_app_id": "1:329333032806:android:2d7dddafcab9f277636aa7",
+        "android_client_info": {
+          "package_name": "com.example.loginappv2"
+        }
+      },
+      "oauth_client": [],
+      "api_key": [
+        {
+          "current_key": "AIzaSyD8Kzbx1w8w8rPRBvq-cBDZ1Pk3NTvTJ0I"
+        }
+      ],
+      "services": {
+        "appinvite_service": {
+          "other_platform_oauth_client": []
+        }
+      }
+    }
+  ],
+  "configuration_version": "1"
+}
