@@ -1,111 +1,66 @@
 import 'package:flutter/material.dart';
-import 'package:loginappv2/src/constants/text_strings.dart';
 import 'package:get/get.dart';
-import 'package:loginappv2/src/features/authentication/screens/forget_password/forget_password_screen.dart';
-import 'package:loginappv2/src/features/user_dashboard/screens/main_dashboard_screen.dart';
+import 'package:loginappv2/src/features/authentication/controllers/login_controller.dart';
 
 
 class LoginForm extends StatelessWidget {
-  const LoginForm({super.key});
+  LoginForm({super.key});
+
+  final LoginController _controller = Get.put(LoginController());
+
+  final TextEditingController emailController = TextEditingController();
+  final TextEditingController passwordController = TextEditingController();
+
+  final RxBool _obscurePassword = true.obs;
 
   @override
   Widget build(BuildContext context) {
     return Form(
-      child: Container(
-        //margin: const EdgeInsets.symmetric(vertical:20.0),
-        padding: const EdgeInsets.symmetric(vertical: 20.0),
-        child: Column(
-          crossAxisAlignment: CrossAxisAlignment.start,
-          children: [
-            TextFormField(
-              decoration: InputDecoration(
-                prefixIcon: Icon(Icons.person_2_outlined),
-                labelText: "E-Mail",
-                hintText: "E-Mail",
-                border: OutlineInputBorder(),
-              ),
+      child: Column(
+        children: [
+          TextFormField(
+            controller: emailController,
+            decoration: InputDecoration(
+              labelText: "E-Mail",
+              prefixIcon: Icon(Icons.person_2_outlined),
             ),
-            SizedBox(height: 20),
-            TextFormField(
-              decoration: InputDecoration(
-                prefixIcon: Icon(Icons.password_outlined),
-                labelText: "Password",
-                hintText: "Password",
-                border: OutlineInputBorder(),
-                suffixIcon: IconButton(
-                  onPressed: () {},
-                  icon: Icon(Icons.remove_red_eye_outlined),
+          ),
+          const SizedBox(height: 20),
+          Obx(() => TextFormField(
+            controller: passwordController,
+            obscureText: _obscurePassword.value,
+            decoration: InputDecoration(
+              labelText: "Password",
+              prefixIcon: Icon(Icons.password_outlined),
+              suffixIcon: IconButton(
+                icon: Icon(
+                  _obscurePassword.value
+                      ? Icons.visibility_off
+                      : Icons.visibility,
                 ),
+                onPressed: () => _obscurePassword.value = !_obscurePassword.value,
               ),
             ),
-            const SizedBox(height: 5),
-            Align(
-              alignment: Alignment.centerRight,
-              child: TextButton(
-                onPressed: () {
-                  showModalBottomSheet(
-                    context: context,
-                    builder: (context) => Container(
-                      padding: const EdgeInsets.all(30.0),
-                      child: Column(
-                        crossAxisAlignment: CrossAxisAlignment.start,
-                        children: [
-                          Text(
-                            ForgetPasswordTitle,
-                            style: Theme.of(context).textTheme.headlineSmall,
-                          ),
-                          Text(
-                            ForgetPasswordSubTitle,
-                            style: Theme.of(context).textTheme.bodyMedium,
-                          ),
-                          const SizedBox(height: 20),
-                          GestureDetector(
-                            onTap: ()=>Get.to(() => ForgetPasswordScreen()),
-                            child: Container(
-                              padding: const EdgeInsets.all(10.0),
-                              decoration: BoxDecoration(
-                                borderRadius: BorderRadius.circular(10.0),
-                                color: Colors.grey.shade200,
-                              ),
-                              child: Row(
-                                children: [
-                                  Icon(Icons.email_outlined, size: 30),
-                                  const SizedBox(width: 10),
-                                  Column(
-                                    crossAxisAlignment: CrossAxisAlignment.start,
-                                    children: [
-                                      Text(
-                                        "E-Mail",
-                                        style: Theme.of(
-                                          context,
-                                        ).textTheme.bodyMedium,
-                                      ),
-                                      Text(
-                                        "Reset Via Email",
-                                        style: Theme.of(
-                                          context,
-                                        ).textTheme.bodyMedium,
-                                      ),
-                                    ],
-                                  ),
-                                ],
-                              ),
-                            ),
-                          ),
-                        ],
-                      ),
-                    ),
-                  );
-                },
-                child: Text("Forget Password?"),
-              ),
+          )),
+          const SizedBox(height: 20),
+          SizedBox(
+            width: double.infinity,
+            child: ElevatedButton(
+              onPressed: () {
+                final email = emailController.text.trim();
+                final password = passwordController.text.trim();
+
+                if (email.isEmpty || password.isEmpty) {
+                  Get.snackbar("Error", "Please enter email and password");
+                  return;
+                }
+
+                _controller.loginUser(email, password);
+              },
+              child: const Text("LOGIN"),
             ),
-            SizedBox(
-              width: double.infinity,
-              child: ElevatedButton(onPressed: ()=> Get.to(() => UserDashboard()), child: Text("LOGIN")),
-            ),
-          ],
-        ),
+          ),
+        ],
       ),
     );
   }

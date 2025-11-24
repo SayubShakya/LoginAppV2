@@ -55,7 +55,7 @@ class _LandloardDashboardState extends State<LandloardDashboard> {
     PaymentStatementScreen(),    // Index 0: Payment working
     LandlordTenantsScreen(),     // Index 1: Tenants
     LandlordPropertiesScreen(),  // Index 2: Properties (Center/Initial)
-    RoleListScreen(),  // Index 3: Add New Listing working
+    AddListingScreen(),  // Index 3: Add New Listing working
     LandlordSettingsScreen(),    // Index 4: Settings
   ];
 

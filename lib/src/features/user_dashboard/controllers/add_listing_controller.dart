@@ -1,39 +1,62 @@
-// lib/src/features/properties/controllers/add_listing_controller.dart
-
 import 'dart:io';
 import 'package:flutter/material.dart';
 import 'package:get/get.dart';
 import 'package:image_picker/image_picker.dart';
-import 'package:geocoding/geocoding.dart';
 import 'package:loginappv2/src/features/user_dashboard/services/property_service.dart';
 import '../models/property_model.dart';
 
 class AddListingController extends GetxController {
-  final PropertyService _propertyService = Get.put(PropertyService()); // Inject service
+  final PropertyService _propertyService = Get.put(PropertyService());
 
-  // Form Field Controllers
+  // Form controllers
   final TextEditingController propertyTitleController = TextEditingController();
   final TextEditingController detailedDescriptionController = TextEditingController();
   final TextEditingController rentController = TextEditingController();
-  final TextEditingController addressController = TextEditingController(); // For user input address
 
-  // Reactive variables for form state
-  Rx<File?> coverImage = Rx<File?>(null); // For the picked image file
-  RxDouble latitude = 0.0.obs;
-  RxDouble longitude = 0.0.obs;
-  RxString selectedStatus = 'available'.obs; // Default status
-  RxString selectedPropertyType = 'apartment'.obs; // Default property type (you'll fetch real types)
+  // Reactive variables
+  Rx<File?> coverImage = Rx<File?>(null);
   RxBool isLoading = false.obs;
 
-  // Example lists for dropdowns (you'd fetch these from backend in a real app)
-  final List<String> propertyStatuses = ['available', 'rented', 'under_maintenance'];
-  final List<String> propertyTypes = ['apartment', 'house', 'room', 'commercial']; // These would have IDs in backend
+  // Dropdown selections
+  RxString selectedStatus = ''.obs;
+  RxString selectedPropertyType = ''.obs;
+  RxString selectedLocation = ''.obs;
 
-  // --- Image Picking Logic ---
+  // Dropdown lists
+  RxList<DropdownItem> statusList = <DropdownItem>[].obs;
+  RxList<DropdownItem> propertyTypeList = <DropdownItem>[].obs;
+  RxList<LocationModel> locationList = <LocationModel>[].obs;
+
+  @override
+  void onInit() {
+    super.onInit();
+    loadDropdownData();
+  }
+
+  // Load dropdown data
+  void loadDropdownData() {
+    // Example: Fetch from backend or static data
+    statusList.assignAll([
+      DropdownItem(id: 'available', name: 'Available'),
+      DropdownItem(id: 'rented', name: 'Rented'),
+      DropdownItem(id: 'under_maintenance', name: 'Under Maintenance'),
+    ]);
+
+    propertyTypeList.assignAll([
+      DropdownItem(id: 'apartment', name: 'Apartment'),
+      DropdownItem(id: 'house', name: 'House'),
+      DropdownItem(id: 'room', name: 'Room'),
+      DropdownItem(id: 'commercial', name: 'Commercial'),
+    ]);
+
+    // Fetch locations from backend
+    fetchLocations();
+  }
+
+  // --- Image Picker ---
   Future<void> pickCoverImage(ImageSource source) async {
-    final ImagePicker picker = ImagePicker();
+    final picker = ImagePicker();
     final XFile? pickedFile = await picker.pickImage(source: source, imageQuality: 80);
-
     if (pickedFile != null) {
       coverImage.value = File(pickedFile.path);
     } else {
@@ -41,115 +64,93 @@ class AddListingController extends GetxController {
     }
   }
 
-  // --- Geocoding Logic (Address to Lat/Long) ---
-  Future<void> geocodeAddress() async {
-    isLoading.value = true;
+  // --- Fetch Locations from backend ---
+  Future<void> fetchLocations() async {
     try {
-      List<Location> locations = await locationFromAddress(addressController.text);
-      if (locations.isNotEmpty) {
-        latitude.value = locations.first.latitude;
-        longitude.value = locations.first.longitude;
-        Get.snackbar(
-          'Location Found',
-          'Lat: ${latitude.value}, Long: ${longitude.value}',
-          snackPosition: SnackPosition.BOTTOM,
-          backgroundColor: Colors.green.shade400,
-          colorText: Colors.white,
-        );
-      } else {
-        Get.snackbar('Error', 'Could not find coordinates for the given address.', snackPosition: SnackPosition.BOTTOM, backgroundColor: Colors.red.shade400, colorText: Colors.white);
-        latitude.value = 0.0;
-        longitude.value = 0.0;
-      }
+      isLoading.value = true;
+      final fetchedLocations = await _propertyService.getLocations(page: 1, limit: 50);
+      locationList.assignAll(fetchedLocations as Iterable<LocationModel>);
     } catch (e) {
-      Get.snackbar('Error', 'Geocoding failed: $e', snackPosition: SnackPosition.BOTTOM, backgroundColor: Colors.red.shade400, colorText: Colors.white);
-      latitude.value = 0.0;
-      longitude.value = 0.0;
+      Get.snackbar('Error', 'Failed to fetch locations: $e',
+          snackPosition: SnackPosition.BOTTOM);
     } finally {
       isLoading.value = false;
     }
   }
 
-  // --- Form Submission Logic ---
+  // --- Add Property ---
   Future<void> addProperty() async {
-    if (isLoading.value) return; // Prevent multiple submissions
+    if (isLoading.value) return;
+
+    if (selectedStatus.value.isEmpty ||
+        selectedPropertyType.value.isEmpty ||
+        selectedLocation.value.isEmpty) {
+      Get.snackbar('Error', 'Please select all dropdown fields',
+          snackPosition: SnackPosition.BOTTOM);
+      return;
+    }
 
     isLoading.value = true;
-    String? uploadedImageUrl;
 
     try {
-      // 1. Upload Image (if selected)
+      String? imageId;
+
       if (coverImage.value != null) {
-        uploadedImageUrl = await _propertyService.uploadImage(coverImage.value!.path);
-        if (uploadedImageUrl == null) {
-          Get.snackbar('Error', 'Failed to upload cover image.', snackPosition: SnackPosition.BOTTOM, backgroundColor: Colors.red.shade400, colorText: Colors.white);
-          return; // Stop if image upload fails
+        final uploadedImage = await _propertyService.uploadImage(coverImage.value!.path);
+        if (uploadedImage != null && uploadedImage['image_id'] != null) {
+          imageId = uploadedImage['image_id'];
+        } else {
+          Get.snackbar('Error', 'Failed to upload image',
+              snackPosition: SnackPosition.BOTTOM);
+          isLoading.value = false;
+          return;
         }
       }
 
-      // 2. Create Property Model
-      // TODO: Replace 'landlordUserId123' with actual logged-in user ID
-      // TODO: Replace 'propertyTypeId_apartment' with actual ID based on selectedPropertyType
+      // Get selected location for lat/lng
+      final selectedLoc = locationList.firstWhere((loc) => loc.id == selectedLocation.value);
+
       final newProperty = PropertyModel(
         propertyTitle: propertyTitleController.text,
         detailedDescription: detailedDescriptionController.text,
         rent: double.tryParse(rentController.text) ?? 0.0,
-        coverImageUrl: uploadedImageUrl,
-        locationId: addressController.text, // For now, using address as location_id, ideally this is an ID
-        latitude: latitude.value,
-        longitude: longitude.value,
+        coverImageUrl: imageId,
         status: selectedStatus.value,
-        userId: 'landlordUserId123', // **IMPORTANT: Replace with actual logged-in user's ID**
-        propertyTypesId: 'propertyTypeId_${selectedPropertyType.value}', // **IMPORTANT: Replace with actual ID based on selection**
+        propertyTypesId: selectedPropertyType.value,
+        locationId: selectedLocation.value,
+        latitude: selectedLoc.latitude,
+        longitude: selectedLoc.longitude,
+        userId: 'landlordUserId123', // Replace with actual logged-in user
       );
 
-      // 3. Send to Backend
       final createdProperty = await _propertyService.createProperty(newProperty);
 
       if (createdProperty != null) {
-        Get.snackbar(
-          'Success',
-          'Property "${createdProperty.propertyTitle}" listed successfully!',
-          snackPosition: SnackPosition.TOP,
-          backgroundColor: Colors.green.shade400,
-          colorText: Colors.white,
-        );
-        clearForm(); // Clear form after successful submission
-        Get.back(); // Go back to previous screen (e.g., landlord dashboard)
+        Get.snackbar('Success', 'Property listed successfully!',
+            snackPosition: SnackPosition.TOP,
+            backgroundColor: Colors.green.shade400,
+            colorText: Colors.white);
+        clearForm();
+        Get.back();
       } else {
-        Get.snackbar(
-          'Error',
-          'Failed to list property. Please try again.',
-          snackPosition: SnackPosition.BOTTOM,
-          backgroundColor: Colors.red.shade400,
-          colorText: Colors.white,
-        );
+        Get.snackbar('Error', 'Failed to list property', snackPosition: SnackPosition.BOTTOM);
       }
     } catch (e) {
-      Get.snackbar(
-        'Error',
-        'An unexpected error occurred: $e',
-        snackPosition: SnackPosition.BOTTOM,
-        backgroundColor: Colors.red.shade400,
-        colorText: Colors.white,
-      );
-      print('Error submitting property: $e');
+      Get.snackbar('Error', 'Unexpected error: $e', snackPosition: SnackPosition.BOTTOM);
+      print('Error: $e');
     } finally {
       isLoading.value = false;
     }
   }
 
-  // --- Form Reset ---
   void clearForm() {
     propertyTitleController.clear();
     detailedDescriptionController.clear();
     rentController.clear();
-    addressController.clear();
     coverImage.value = null;
-    latitude.value = 0.0;
-    longitude.value = 0.0;
-    selectedStatus.value = 'available';
-    selectedPropertyType.value = 'apartment';
+    selectedStatus.value = '';
+    selectedPropertyType.value = '';
+    selectedLocation.value = '';
   }
 
   @override
@@ -157,7 +158,39 @@ class AddListingController extends GetxController {
     propertyTitleController.dispose();
     detailedDescriptionController.dispose();
     rentController.dispose();
-    addressController.dispose();
     super.onClose();
+  }
+}
+
+// --- Simple models for dropdowns ---
+class DropdownItem {
+  final String id;
+  final String name;
+  DropdownItem({required this.id, required this.name});
+}
+
+class LocationModel {
+  final String id;
+  final String city;
+  final String areaName;
+  final double latitude;
+  final double longitude;
+
+  LocationModel({
+    required this.id,
+    required this.city,
+    required this.areaName,
+    required this.latitude,
+    required this.longitude,
+  });
+
+  factory LocationModel.fromJson(Map<String, dynamic> json) {
+    return LocationModel(
+      id: json['id'],
+      city: json['city'] ?? '',
+      areaName: json['area_name'] ?? '',
+      latitude: (json['latitude'] as num).toDouble(),
+      longitude: (json['longitude'] as num).toDouble(),
+    );
   }
 }

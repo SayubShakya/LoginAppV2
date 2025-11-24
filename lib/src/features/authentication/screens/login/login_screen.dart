@@ -22,7 +22,7 @@ class LoginScreen extends StatelessWidget {
               children: [
                 LoginHeaderWidget(size: size),
                 // for cleaner code view widget is created and instance of the newly created class is only called here
-                const LoginForm(),
+                 LoginForm(),
                 LoginFooterWidget(),
               ],
             ),

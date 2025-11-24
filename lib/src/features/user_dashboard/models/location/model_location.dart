@@ -1,60 +1,58 @@
-class LocationModel {
-  // Add the unique identifier from the backend. Nullable because it won't exist before creation.
-  String? id;
-  String? streetAddress;
-  String? areaName;
-  String? city;
-  String? postalCode;
-  double? latitude;
-  double? longitude;
-  // This is a great field for status/soft-delete
-  bool? isActive;
+// lib/src/features/location/models/location_model.dart
 
-  LocationModel({
-    this.id, // Include in the constructor
+import 'package:flutter/foundation.dart';
+
+@immutable
+class LocationModel {
+  final String id;
+  final String? streetAddress;
+  final String? areaName;
+  final String city;
+  final String? postalCode;
+  final double latitude;
+  final double longitude;
+  final bool isActive;
+  final DateTime createdDate;
+  final DateTime updatedDate;
+
+  const LocationModel({
+    required this.id,
     this.streetAddress,
     this.areaName,
-    this.city,
+    required this.city,
     this.postalCode,
-    this.latitude,
-    this.longitude,
-    this.isActive = true, // Default to active when creating a new instance
+    required this.latitude,
+    required this.longitude,
+    required this.isActive,
+    required this.createdDate,
+    required this.updatedDate,
   });
 
-  // Factory method to create an instance from a JSON map (e.g., from an API or database)
   factory LocationModel.fromJson(Map<String, dynamic> json) {
     return LocationModel(
-      id: json['id'] as String?, // Map the 'id' field
+      id: json['id'] as String,
       streetAddress: json['street_address'] as String?,
       areaName: json['area_name'] as String?,
-      city: json['city'] as String?,
+      city: json['city'] as String,
       postalCode: json['postal_code'] as String?,
-      // Ensure we safely cast to double, handling potential int inputs
-      latitude: (json['latitude'] as num?)?.toDouble(),
-      longitude: (json['longitude'] as num?)?.toDouble(),
-      isActive: json['is_active'] as bool?,
+      latitude: (json['latitude'] as num).toDouble(),
+      longitude: (json['longitude'] as num).toDouble(),
+      isActive: json['is_active'] as bool,
+      createdDate: DateTime.parse(json['created_date'] as String),
+      updatedDate: DateTime.parse(json['updated_date'] as String),
     );
   }
 
-  // Method to convert the instance to a JSON map (e.g., for sending to an API or saving to a database)
-  Map<String, dynamic> toJson() {
-    final Map<String, dynamic> data = <String, dynamic>{};
-    if (id != null) {
-      data['id'] = this.id; // Include ID only if it exists (for updates/deletes)
-    }
-    data['street_address'] = this.streetAddress;
-    data['area_name'] = this.areaName;
-    data['city'] = this.city;
-    data['postal_code'] = this.postalCode;
-    data['latitude'] = this.latitude;
-    data['longitude'] = this.longitude;
-    data['is_active'] = this.isActive;
-    return data;
-  }
-
-  // Utility method for easy printing and debugging
-  @override
-  String toString() {
-    return 'LocationModel{id: $id, city: $city, streetAddress: $streetAddress, isActive: $isActive}';
-  }
+  Map<String, dynamic> toJson() => {
+    'id': id,
+    'street_address': streetAddress,
+    'area_name': areaName,
+    'city': city,
+    'postal_code': postalCode,
+    'latitude': latitude,
+    'longitude': longitude,
+    'is_active': isActive,
+    'created_date': createdDate.toIso8601String(),
+    'updated_date': updatedDate.toIso8601String(),
+  };
 }

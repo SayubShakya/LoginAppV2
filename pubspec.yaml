@@ -38,6 +38,12 @@ dependencies:
   get: ^4.7.2
 
 
+  #JWT Token Handdle
+  dio: ^5.9.0
+  get_storage:
+
+
+
 
 
 dev_dependencies:

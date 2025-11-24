@@ -1,6 +1,8 @@
 import 'package:firebase_core/firebase_core.dart';
 import 'package:flutter/material.dart';
+import 'package:get_storage/get_storage.dart';
 import 'package:loginappv2/firebase_options.dart';
+import 'package:loginappv2/src/features/authentication/auth_binding.dart';
 import 'package:loginappv2/src/features/authentication/screens/on_boarding/on_boarding_screen.dart';
 import 'package:loginappv2/src/features/authentication/screens/welcome/welcome_screen.dart';
 import 'package:loginappv2/src/features/user_credentials/screens/role_list_binding.dart';
@@ -12,9 +14,10 @@ import 'package:get/get.dart';
 
 import 'src/features/user_credentials/screens/role_screen.dart';
 
-void main() {
+Future<void> main() async {
   WidgetsFlutterBinding.ensureInitialized();
   Firebase.initializeApp(options: DefaultFirebaseOptions.currentPlatform).then((value)=> Get.put(AuthenticationRepository()));
+  await GetStorage.init();
   runApp(const MyApp());
 }
 
@@ -29,10 +32,9 @@ class MyApp extends StatelessWidget {
       darkTheme: AppTheme.darkTheme,
       debugShowCheckedModeBanner: false,
       themeMode: ThemeMode.system,
+    initialBinding:  AppBinding(),
 
-      initialBinding: RoleListBinding(),
-
-      home: UserDashboard(),
+      home: SplashScreen(),
     );
   }
 }

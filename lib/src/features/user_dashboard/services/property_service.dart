@@ -1,26 +1,21 @@
-
 import 'dart:convert';
 import 'package:http/http.dart' as http;
 import '../models/property_model.dart';
 
 class PropertyService {
-  final String _baseUrl = "http://localhost:5000/api/properties"; // **IMPORTANT: Replace with your actual backend URL**
-  final String _uploadImageUrl = 'YOUR_BACKEND_API_URL/api/upload-image'; // **IMPORTANT: Replace with your image upload endpoint**
+  final String _baseUrl = "http://localhost:5000/api/properties";
+  final String _uploadImageUrl = "http://localhost:5000/api/images/upload-image";
+  final String _locationsUrl = "http://localhost:5000/api/locations?page=1&limit=50";
+  final String _propertyTypesUrl = "http://localhost:5000/api/property-types?page=1&limit=50";
+  final String _statusesUrl = "http://localhost:5000/api/statuses?page=1&limit=50"; // Optional if your backend provides statuses
 
-  // Helper for API Headers (e.g., for authentication)
+  // Helper for API Headers
   Map<String, String> _getHeaders({bool isMultipart = false}) {
-    // You'll likely need to add an Authorization token here
-    // e.g., String? token = Get.find<AuthController>().token;
-    // if (token != null) headers['Authorization'] = 'Bearer $token';
-
-    if (isMultipart) {
-      // No Content-Type for multipart requests; http package handles it
-      return {};
-    } else {
-      return {'Content-Type': 'application/json; charset=UTF-8'};
-    }
+    if (isMultipart) return {};
+    return {'Content-Type': 'application/json; charset=UTF-8'};
   }
 
+  // --- Create Property ---
   Future<PropertyModel?> createProperty(PropertyModel property) async {
     try {
       final response = await http.post(
@@ -29,7 +24,7 @@ class PropertyService {
         body: jsonEncode(property.toJson()),
       );
 
-      if (response.statusCode == 201) { // 201 Created
+      if (response.statusCode == 201) {
         return PropertyModel.fromJson(jsonDecode(response.body));
       } else {
         print('Failed to create property: ${response.statusCode} ${response.body}');
@@ -41,24 +36,22 @@ class PropertyService {
     }
   }
 
-  // Method to upload an image and get its URL back
-  Future<String?> uploadImage(String imagePath) async {
+  // --- Upload Image ---
+  Future<Map<String, dynamic>?> uploadImage(String imagePath) async {
     try {
       var request = http.MultipartRequest(
         'POST',
         Uri.parse(_uploadImageUrl),
       );
-      // Add authentication headers if needed
-      // request.headers.addAll(_getHeaders(isMultipart: true));
 
-      request.files.add(await http.MultipartFile.fromPath('image', imagePath)); // 'image' should match your backend's expected field name
+      request.files.add(await http.MultipartFile.fromPath('image', imagePath));
 
       var response = await request.send();
       if (response.statusCode == 200) {
         final respStr = await response.stream.bytesToString();
         final Map<String, dynamic> data = jsonDecode(respStr);
-        // Assuming your backend returns a JSON with the URL, e.g., {'imageUrl': 'http://...'}
-        return data['imageUrl']; // **IMPORTANT: Adjust 'imageUrl' to match your backend's response key**
+        // Return full image object with 'image_id' and 'path'
+        return data;
       } else {
         print('Failed to upload image: ${response.statusCode}');
         return null;
@@ -69,5 +62,105 @@ class PropertyService {
     }
   }
 
-// You can add other methods like fetchProperties, updateProperty, deleteProperty etc.
+  // --- Fetch Locations ---
+  Future<List<LocationModel>> getLocations({int page = 1, int limit = 50}) async {
+    try {
+      final response = await http.get(Uri.parse("$_locationsUrl&page=$page&limit=$limit"),
+          headers: _getHeaders());
+
+      if (response.statusCode == 200) {
+        final data = jsonDecode(response.body)['data'] as List;
+        return data.map((json) => LocationModel.fromJson(json)).toList();
+      } else {
+        print('Failed to fetch locations: ${response.statusCode}');
+        return [];
+      }
+    } catch (e) {
+      print('Error fetching locations: $e');
+      return [];
+    }
+  }
+
+  // --- Fetch Property Types ---
+  Future<List<PropertyTypeModel>> getPropertyTypes({int page = 1, int limit = 50}) async {
+    try {
+      final response = await http.get(Uri.parse("$_propertyTypesUrl&page=$page&limit=$limit"),
+          headers: _getHeaders());
+
+      if (response.statusCode == 200) {
+        final data = jsonDecode(response.body)['data'] as List;
+        return data.map((json) => PropertyTypeModel.fromJson(json)).toList();
+      } else {
+        print('Failed to fetch property types: ${response.statusCode}');
+        return [];
+      }
+    } catch (e) {
+      print('Error fetching property types: $e');
+      return [];
+    }
+  }
+
+  // --- Fetch Statuses (if backend provides) ---
+  Future<List<StatusModel>> getStatuses({int page = 1, int limit = 50}) async {
+    try {
+      final response = await http.get(Uri.parse("$_statusesUrl&page=$page&limit=$limit"),
+          headers: _getHeaders());
+
+      if (response.statusCode == 200) {
+        final data = jsonDecode(response.body)['data'] as List;
+        return data.map((json) => StatusModel.fromJson(json)).toList();
+      } else {
+        print('Failed to fetch statuses: ${response.statusCode}');
+        return [];
+      }
+    } catch (e) {
+      print('Error fetching statuses: $e');
+      return [];
+    }
+  }
+}
+
+// --- Models for Location, PropertyType, Status ---
+class LocationModel {
+  final String id;
+  final String city;
+  final String areaName;
+
+  LocationModel({required this.id, required this.city, required this.areaName});
+
+  factory LocationModel.fromJson(Map<String, dynamic> json) {
+    return LocationModel(
+      id: json['id'],
+      city: json['city'] ?? '',
+      areaName: json['area_name'] ?? '',
+    );
+  }
+}
+
+class PropertyTypeModel {
+  final String id;
+  final String name;
+
+  PropertyTypeModel({required this.id, required this.name});
+
+  factory PropertyTypeModel.fromJson(Map<String, dynamic> json) {
+    return PropertyTypeModel(
+      id: json['id'],
+      name: json['name'] ?? '',
+    );
+  }
+}
+
+class StatusModel {
+  final String id;
+  final String name;
+
+  StatusModel({required this.id, required this.name});
+
+  factory StatusModel.fromJson(Map<String, dynamic> json) {
+    return StatusModel(
+      id: json['id'],
+      name: json['name'] ?? '',
+    );
+  }
 }
