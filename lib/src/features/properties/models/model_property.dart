@@ -1,79 +1,71 @@
-import 'package:flutter/material.dart';
+// dart
+import 'package:loginappv2/src/features/authentication/models/user_model.dart';
+import 'package:loginappv2/src/features/image_handle/image_handle_model.dart';
+import 'package:loginappv2/src/features/property_type/property_type_model.dart';
+import 'package:loginappv2/src/features/status/status_model.dart';
+import 'package:loginappv2/src/features/user_dashboard/services/property_service.dart' hide PropertyTypeModel, LocationModel;
+import '../../user_dashboard/models/location/model_location.dart';
 
 class PropertyModel {
-  // Data types inferred from the property names
-  int? id;
-  String? property_title;
-  String? detailed_description;
-  String? upload_photo_url;
-  num? rent; // num for flexibility (int/double)
-  String? rental_period;
-  String? size;
-  String? status;
-
-  // Foreign Keys (usually integers)
-  int? user_id;
-  int? location_id;
-  int? property_types_id;
-
-  // Date fields (usually Strings from the API)
-  String? created_date;
-  String? updated_date;
-
-  // Boolean field (usually int or bool)
-  bool? is_active;
+  final String id;
+  final String propertyTitle;
+  final String detailedDescription;
+  final int rent;
+  final bool isActive;
+  final ImageModel image;
+  final LocationModel location;
+  final UserModel user;
+  final PropertyTypeModel propertyType;
+  final StatusModel status;
+  final DateTime createdDate;
+  final DateTime updatedDate;
 
   PropertyModel({
-    this.id,
-    this.property_title,
-    this.detailed_description,
-    this.upload_photo_url,
-    this.rent,
-    this.rental_period,
-    this.size,
-    this.status,
-    this.user_id,
-    this.location_id,
-    this.property_types_id,
-    this.created_date,
-    this.updated_date,
-    this.is_active,
+    required this.id,
+    required this.propertyTitle,
+    required this.detailedDescription,
+    required this.rent,
+    required this.isActive,
+    required this.image,
+    required this.location,
+    required this.user,
+    required this.propertyType,
+    required this.status,
+    required this.createdDate,
+    required this.updatedDate,
   });
 
-  PropertyModel.fromJson(Map<String, dynamic> json) {
-    // Note: The field names here must exactly match the keys in the API response JSON.
-    id = json['id'];
-    property_title = json['property_title'];
-    detailed_description = json['detailed_description'];
-    upload_photo_url = json['upload_photo_url'];
-    rent = json['rent'];
-    rental_period = json['rental_period'];
-    size = json['size'];
-    status = json['status'];
-    user_id = json['user_id'];
-    location_id = json['location_id'];
-    property_types_id = json['property_types_id'];
-    created_date = json['created_date'];
-    updated_date = json['updated_date'];
-    is_active = json['is_active'];
+  static Map<String, dynamic> _normalize(Map? m) {
+    if (m == null) return <String, dynamic>{};
+    final map = Map<String, dynamic>.from(m);
+    if (map.containsKey('_id') && !map.containsKey('id')) {
+      map['id'] = map['_id'];
+    }
+    return map;
   }
 
-  Map<String, dynamic> toJson() {
-    final Map<String, dynamic> data = new Map<String, dynamic>();
-    data['id'] = this.id;
-    data['property_title'] = this.property_title;
-    data['detailed_description'] = this.detailed_description;
-    data['upload_photo_url'] = this.upload_photo_url;
-    data['rent'] = this.rent;
-    data['rental_period'] = this.rental_period;
-    data['size'] = this.size;
-    data['status'] = this.status;
-    data['user_id'] = this.user_id;
-    data['location_id'] = this.location_id;
-    data['property_types_id'] = this.property_types_id;
-    data['created_date'] = this.created_date;
-    data['updated_date'] = this.updated_date;
-    data['is_active'] = this.is_active;
-    return data;
+  factory PropertyModel.fromJson(Map<String, dynamic> json) {
+    final imageJson = _normalize(json['image_id'] as Map?);
+    final userJson = _normalize(json['user_id'] as Map?);
+    final propertyTypeJson = _normalize(json['property_types_id'] as Map?);
+    final locationJson = _normalize(json['location'] as Map?);
+
+    final statusRaw = json['status_id'];
+    final statusJson = statusRaw is String ? {'id': statusRaw} : _normalize(statusRaw as Map?);
+
+    return PropertyModel(
+      id: json['id'] ?? json['_id'] ?? '',
+      propertyTitle: json['property_title'] ?? '',
+      detailedDescription: json['detailed_description'] ?? '',
+      rent: (json['rent'] is int) ? json['rent'] as int : int.tryParse('${json['rent']}') ?? 0,
+      isActive: json['is_active'] ?? false,
+      image: ImageModel.fromJson(imageJson),
+      location: LocationModel.fromJson(locationJson),
+      user: UserModel.fromJson(userJson),
+      propertyType: PropertyTypeModel.fromJson(propertyTypeJson),
+      status: StatusModel.fromJson(statusJson),
+      createdDate: DateTime.tryParse(json['created_date'] ?? '') ?? DateTime.now(),
+      updatedDate: DateTime.tryParse(json['updated_date'] ?? '') ?? DateTime.now(),
+    );
   }
 }

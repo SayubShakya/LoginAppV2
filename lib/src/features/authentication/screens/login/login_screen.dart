@@ -1,6 +1,4 @@
 import 'package:flutter/material.dart';
-import 'package:loginappv2/src/constants/image_strings.dart';
-import 'package:loginappv2/src/constants/text_strings.dart';
 import 'package:loginappv2/src/features/authentication/screens/login/login_footer_widget.dart';
 import 'package:loginappv2/src/features/authentication/screens/login/login_form_widget.dart';
 import 'package:loginappv2/src/features/authentication/screens/login/login_header_widget.dart';

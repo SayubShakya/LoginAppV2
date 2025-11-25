@@ -25,7 +25,7 @@ class _UserDashboardState extends State<UserDashboard> {
 
     const Mapspage(),// Index 0
     const EsewaApp(title: 'esewa Aayush',),// Index 1
-    const dashboard(),// Index 2
+    PropertyListScreen(),// Index 2
     HomeScreen(),// Index 3
     const RoomListingWidget(),
   ];
