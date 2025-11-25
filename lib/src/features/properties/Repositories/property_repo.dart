@@ -12,8 +12,11 @@ class PropertyService {
         "page": page,
         "limit": limit,
       });
-
-      print("Response data: ${response.data}");
+      // final response = await _dio.get("/users", queryParameters: {
+      //   "page": page,
+      //   "limit": limit,
+      // });
+      // print("Response data: ${users}");
 
       if (response.statusCode == 200) {
         List data = response.data["data"];

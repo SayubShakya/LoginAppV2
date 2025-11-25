@@ -13,7 +13,6 @@ class PropertyListScreen extends StatelessWidget {
       appBar: AppBar(
         title: const Text("Property Listings"),
         actions: [
-          // Add refresh button
           IconButton(
             icon: const Icon(Icons.refresh),
             onPressed: controller.retryFetch,
@@ -64,27 +63,77 @@ class PropertyListScreen extends StatelessWidget {
             return Card(
               margin: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
               child: ListTile(
-                leading: Container(
-                  width: 80,
-                  height: 80,
-                  color: Colors.grey[300],
-                  child: property.image.path.isNotEmpty
-                      ? Image.network(
-                    'http://localhost:5000/uploads/${property.image.filename}',
-                    fit: BoxFit.cover,
-                    errorBuilder: (context, error, stackTrace) {
-                      return const Icon(Icons.home);
-                    },
-                  )
-                      : const Icon(Icons.home),
+                leading: _buildPropertyImage(property),
+                title: Text(property.propertyTitle ?? "No Title"),
+                subtitle: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    Text("Rent: \$${property.rent ?? 'N/A'}"),
+                    Text("City: ${property.location?.city ?? 'Unknown Location'}"),
+                  ],
                 ),
-                title: Text(property.propertyTitle),
-                subtitle: Text("Rent: \$${property.rent} • ${property.location.city}"),
               ),
             );
           },
         );
       }),
+    );
+  }
+
+  Widget _buildPropertyImage(property) {
+    final image = property.image;
+    final imagePath = image?.path;
+    final filename = image?.filename;
+
+    // If no image data, show placeholder
+    if (imagePath == null && filename == null) {
+      return Container(
+        width: 80,
+        height: 80,
+        color: Colors.grey[300],
+        child: const Icon(Icons.home, color: Colors.grey),
+      );
+    }
+
+    // Build image URL
+    String imageUrl;
+    if (filename != null && filename.isNotEmpty) {
+      imageUrl = 'http://192.168.1.75:5000/uploads/$filename';
+    } else if (imagePath != null && imagePath.isNotEmpty) {
+      // Extract filename from path if needed
+      if (imagePath.contains('\\')) {
+        final extractedFilename = imagePath.split('\\').last;
+        imageUrl = 'http://192.168.1.75:5000/uploads/$extractedFilename';
+      } else {
+        imageUrl = imagePath;
+      }
+    } else {
+      // Fallback to placeholder
+      return Container(
+        width: 80,
+        height: 80,
+        color: Colors.grey[300],
+        child: const Icon(Icons.home, color: Colors.grey),
+      );
+    }
+
+    return Container(
+      width: 80,
+      height: 80,
+      color: Colors.grey[300],
+      child: Image.network(
+        imageUrl,
+        fit: BoxFit.cover,
+        errorBuilder: (context, error, stackTrace) {
+          return const Icon(Icons.broken_image, color: Colors.grey);
+        },
+        loadingBuilder: (context, child, loadingProgress) {
+          if (loadingProgress == null) return child;
+          return const Center(
+            child: CircularProgressIndicator(),
+          );
+        },
+      ),
     );
   }
 }

@@ -7,39 +7,39 @@ class LocationModel {
   final String id;
   final String? streetAddress;
   final String? areaName;
-  final String city;
+  final String? city; // Made optional
   final String? postalCode;
-  final double latitude;
-  final double longitude;
-  final bool isActive;
-  final DateTime createdDate;
-  final DateTime updatedDate;
+  final double? latitude; // Made optional
+  final double? longitude; // Made optional
+  final bool? isActive; // Made optional
+  final DateTime? createdDate; // Made optional
+  final DateTime? updatedDate; // Made optional
 
   const LocationModel({
     required this.id,
     this.streetAddress,
     this.areaName,
-    required this.city,
+    this.city,
     this.postalCode,
-    required this.latitude,
-    required this.longitude,
-    required this.isActive,
-    required this.createdDate,
-    required this.updatedDate,
+    this.latitude,
+    this.longitude,
+    this.isActive,
+    this.createdDate,
+    this.updatedDate,
   });
 
   factory LocationModel.fromJson(Map<String, dynamic> json) {
     return LocationModel(
-      id: json['id'] as String,
-      streetAddress: json['street_address'] as String?,
-      areaName: json['area_name'] as String?,
-      city: json['city'] as String,
-      postalCode: json['postal_code'] as String?,
-      latitude: (json['latitude'] as num).toDouble(),
-      longitude: (json['longitude'] as num).toDouble(),
-      isActive: json['is_active'] as bool,
-      createdDate: DateTime.parse(json['created_date'] as String),
-      updatedDate: DateTime.parse(json['updated_date'] as String),
+      id: json['id']?.toString() ?? json['_id']?.toString() ?? '',
+      streetAddress: json['street_address']?.toString(),
+      areaName: json['area_name']?.toString(),
+      city: json['city']?.toString(),
+      postalCode: json['postal_code']?.toString(),
+      latitude: (json['latitude'] is num) ? (json['latitude'] as num).toDouble() : null,
+      longitude: (json['longitude'] is num) ? (json['longitude'] as num).toDouble() : null,
+      isActive: json['is_active'] as bool?,
+      createdDate: DateTime.tryParse(json['created_date']?.toString() ?? ''),
+      updatedDate: DateTime.tryParse(json['updated_date']?.toString() ?? ''),
     );
   }
 
@@ -52,7 +52,7 @@ class LocationModel {
     'latitude': latitude,
     'longitude': longitude,
     'is_active': isActive,
-    'created_date': createdDate.toIso8601String(),
-    'updated_date': updatedDate.toIso8601String(),
+    'created_date': createdDate?.toIso8601String(),
+    'updated_date': updatedDate?.toIso8601String(),
   };
 }

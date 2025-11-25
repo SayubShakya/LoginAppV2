@@ -15,7 +15,8 @@ class ApiClient {
 
   void _init() {
     final baseOptions = BaseOptions(
-      baseUrl: 'http://192.168.1.75:5000/api',
+
+      baseUrl: 'http://192.168.1.142:5000/api',
       connectTimeout: const Duration(seconds: 30),
       receiveTimeout: const Duration(seconds: 30),
       headers: {
