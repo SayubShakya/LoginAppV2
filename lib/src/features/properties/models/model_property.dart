@@ -1,23 +1,29 @@
+// lib/src/features/property/models/model_property.dart
+
 import 'package:loginappv2/src/features/authentication/models/user_model.dart';
 import 'package:loginappv2/src/features/image_handle/image_handle_model.dart';
 import 'package:loginappv2/src/features/property_type/property_type_model.dart';
 import 'package:loginappv2/src/features/status/status_model.dart';
 import 'package:loginappv2/src/features/user_dashboard/services/property_service.dart' hide PropertyTypeModel, LocationModel;
 import '../../user_dashboard/models/location/model_location.dart';
+import 'dart:typed_data'; // Required for Uint8List
 
 class PropertyModel {
   final String id;
   final String? propertyTitle;
   final String? detailedDescription;
-  final int? rent; // Made optional
-  final bool? isActive; // Made optional
-  final ImageModel? image; // Made optional
-  final LocationModel? location; // Made optional
-  final UserModel? user; // Made optional
-  final PropertyTypeModel? propertyType; // Made optional
-  final StatusModel? status; // Made optional
-  final DateTime? createdDate; // Made optional
-  final DateTime? updatedDate; // Made optional
+  final int? rent;
+  final bool? isActive;
+  final ImageModel? image;
+  final LocationModel? location;
+  final UserModel? user;
+  final PropertyTypeModel? propertyType;
+  final StatusModel? status;
+  final DateTime? createdDate;
+  final DateTime? updatedDate;
+
+  // 🌟 NEW FIELD: This caches the Future for the image bytes
+  Future<Uint8List?>? imageFuture;
 
   PropertyModel({
     required this.id,
@@ -32,6 +38,7 @@ class PropertyModel {
     this.status,
     this.createdDate,
     this.updatedDate,
+    this.imageFuture, // Added to the constructor
   });
 
   static Map<String, dynamic> _normalize(Map? m) {
@@ -65,6 +72,7 @@ class PropertyModel {
       status: statusJson.isNotEmpty ? StatusModel.fromJson(statusJson) : null,
       createdDate: DateTime.tryParse(json['created_date']?.toString() ?? ''),
       updatedDate: DateTime.tryParse(json['updated_date']?.toString() ?? ''),
+      // imageFuture remains null here, set by the controller
     );
   }
 }

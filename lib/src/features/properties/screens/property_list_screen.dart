@@ -1,9 +1,17 @@
+// lib/src/features/property/screens/property_list_screen.dart
+
 import 'package:flutter/material.dart';
 import 'package:get/get.dart';
+import 'dart:typed_data';
 import '../controllers/property_controller.dart';
+// Note: We leave the ImageService import here to satisfy Uint8List types
+// but remove the instance because it's now in the controller.
 
 class PropertyListScreen extends StatelessWidget {
   final PropertyController controller = Get.put(PropertyController());
+
+  // 🛑 REMOVED: This local instance caused the re-fetching issue.
+  // final ImageService _imageService = ImageService();
 
   PropertyListScreen({super.key});
 
@@ -20,23 +28,22 @@ class PropertyListScreen extends StatelessWidget {
         ],
       ),
       body: Obx(() {
-        // Show loading indicator
+        // ... (Loading, Error, and Empty state logic remains the same) ...
         if (controller.isLoading.value) {
           return const Center(child: CircularProgressIndicator());
         }
 
-        // Show error message
         if (controller.hasError.value) {
           return Center(
             child: Column(
               mainAxisAlignment: MainAxisAlignment.center,
               children: [
-                Icon(Icons.error_outline, size: 64, color: Colors.red),
+                const Icon(Icons.error_outline, size: 64, color: Colors.red),
                 const SizedBox(height: 16),
                 Text(
                   controller.errorMessage.value,
                   textAlign: TextAlign.center,
-                  style: TextStyle(fontSize: 16, color: Colors.red),
+                  style: const TextStyle(fontSize: 16, color: Colors.red),
                 ),
                 const SizedBox(height: 20),
                 ElevatedButton(
@@ -48,7 +55,6 @@ class PropertyListScreen extends StatelessWidget {
           );
         }
 
-        // Show empty state
         if (controller.propertyList.isEmpty) {
           return const Center(
             child: Text("No properties found."),
@@ -80,13 +86,13 @@ class PropertyListScreen extends StatelessWidget {
     );
   }
 
+  // --- UPDATED _buildPropertyImage METHOD ---
   Widget _buildPropertyImage(property) {
-    final image = property.image;
-    final imagePath = image?.path;
-    final filename = image?.filename;
+    // 1. ACCESS THE CACHED FUTURE from the model
+    final imageFuture = property.imageFuture;
 
-    // If no image data, show placeholder
-    if (imagePath == null && filename == null) {
+    // 2. If the Future hasn't been set, show placeholder
+    if (imageFuture == null) {
       return Container(
         width: 80,
         height: 80,
@@ -95,45 +101,43 @@ class PropertyListScreen extends StatelessWidget {
       );
     }
 
-    // Build image URL
-    String imageUrl;
-    if (filename != null && filename.isNotEmpty) {
-      imageUrl = 'http://192.168.1.75:5000/uploads/$filename';
-    } else if (imagePath != null && imagePath.isNotEmpty) {
-      // Extract filename from path if needed
-      if (imagePath.contains('\\')) {
-        final extractedFilename = imagePath.split('\\').last;
-        imageUrl = 'http://192.168.1.75:5000/uploads/$extractedFilename';
-      } else {
-        imageUrl = imagePath;
-      }
-    } else {
-      // Fallback to placeholder
-      return Container(
-        width: 80,
-        height: 80,
-        color: Colors.grey[300],
-        child: const Icon(Icons.home, color: Colors.grey),
-      );
-    }
+    // 3. Use FutureBuilder with the CACHED Future
+    return FutureBuilder<Uint8List?>(
+      // 🔥 CRITICAL FIX: Use the Future initialized by the Controller
+      future: imageFuture,
+      builder: (context, snapshot) {
+        const double size = 80.0;
 
-    return Container(
-      width: 80,
-      height: 80,
-      color: Colors.grey[300],
-      child: Image.network(
-        imageUrl,
-        fit: BoxFit.cover,
-        errorBuilder: (context, error, stackTrace) {
-          return const Icon(Icons.broken_image, color: Colors.grey);
-        },
-        loadingBuilder: (context, child, loadingProgress) {
-          if (loadingProgress == null) return child;
-          return const Center(
-            child: CircularProgressIndicator(),
+        // 4. Handle connection states
+        if (snapshot.connectionState == ConnectionState.waiting) {
+          return const SizedBox(
+            width: size,
+            height: size,
+            child: Center(child: CircularProgressIndicator(strokeWidth: 2)),
           );
-        },
-      ),
+        }
+
+        // 5. Handle error or null data
+        if (snapshot.hasError || snapshot.data == null) {
+          return Container(
+            width: size,
+            height: size,
+            color: Colors.grey[300],
+            child: const Icon(Icons.broken_image, color: Colors.red),
+          );
+        }
+
+        // 6. Success: Use Image.memory to display the Uint8List bytes
+        return Container(
+          width: size,
+          height: size,
+          color: Colors.grey[300],
+          child: Image.memory(
+            snapshot.data!,
+            fit: BoxFit.cover,
+          ),
+        );
+      },
     );
   }
 }

@@ -1,15 +1,19 @@
+// lib/src/features/property/controllers/property_controller.dart
+
 import 'package:get/get.dart';
 import 'package:loginappv2/src/features/authentication/services/token_manager.dart';
+import 'package:loginappv2/src/features/image_handle/image_handle_services.dart'; // NEW IMPORT
 import '../Repositories/property_repo.dart';
 import '../models/model_property.dart';
 
 class PropertyController extends GetxController {
   final PropertyService _service = PropertyService();
+  final ImageService _imageService = ImageService(); // INSTANTIATE SERVICE
 
   var propertyList = <PropertyModel>[].obs;
   var isLoading = false.obs;
-  var errorMessage = ''.obs; // ← Track error messages
-  var hasError = false.obs;  // ← Track error state
+  var errorMessage = ''.obs;
+  var hasError = false.obs;
 
   @override
   void onInit() {
@@ -25,10 +29,22 @@ class PropertyController extends GetxController {
       hasError.value = false;
       errorMessage.value = '';
 
-      // Add debug to check token
       await _debugTokenCheck();
 
       final properties = await _service.getProperties(page: page, limit: limit);
+
+      // --- CORE FIX: CACHE THE IMAGE FUTURE ---
+      for (var property in properties) {
+        final filename = property.image?.filename;
+
+        if (filename != null && filename.isNotEmpty) {
+          // 🚀 Start the fetch and store the Future object.
+          // This prevents the widget from making multiple requests.
+          property.imageFuture = _imageService.fetchImage(filename);
+        }
+      }
+      // ------------------------------------------
+
       propertyList.value = properties;
 
       print('✅ PropertyController: Successfully loaded ${properties.length} properties');
@@ -38,14 +54,13 @@ class PropertyController extends GetxController {
       hasError.value = true;
       errorMessage.value = e.toString();
 
-      // Show user-friendly error message
       if (e.toString().contains('401') || e.toString().contains('Authentication')) {
         errorMessage.value = 'Login expired. Please log in again.';
         Get.snackbar(
           'Session Expired',
           'Please log in again to continue',
           snackPosition: SnackPosition.BOTTOM,
-          duration: Duration(seconds: 5),
+          duration: const Duration(seconds: 5),
         );
       } else {
         Get.snackbar(
@@ -59,11 +74,9 @@ class PropertyController extends GetxController {
     }
   }
 
-  // Debug method to check token status
+  // Debug method to check token status (remains the same)
   Future<void> _debugTokenCheck() async {
     try {
-      // You'll need to import TokenManager
-      // import 'package:loginappv2/src/features/authentication/services/token_manager.dart';
       final tokenManager = TokenManager();
       final token = await tokenManager.getAccessToken();
 

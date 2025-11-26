@@ -36,7 +36,7 @@ class LoginController extends GetxController {
       );
 
       // 3. Navigate based on role
-      if (loginResponse.role == "Landlord") {
+      if (loginResponse.role == "LANDLORD") {
         Get.offAll(() => LandloardDashboard());
       } else {
         Get.offAll(() => UserDashboard());
