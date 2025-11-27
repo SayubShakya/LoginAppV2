@@ -8,7 +8,7 @@ import 'dart:typed_data'; // Needed for Uint8List in the fetch method
 
 class ImageService {
   // Use the IP address, replacing 'localhost'
-  static const String _serverBaseUrl = 'http://10.10.10.35:5000';
+  static const String _serverBaseUrl = 'http://10.10.10.203:5000';
 
   // Endpoint for POST (Uploading the image)
   static const String _uploadUrl = '$_serverBaseUrl/api/images/upload-image';

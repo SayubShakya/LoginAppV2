@@ -21,66 +21,40 @@ class _UserDashboardState extends State<UserDashboard> {
 
   // The CORRECTED pages list (5 items for 5 icons)
   final List<Widget> _pages = [
-    // Index 0: Icons.add
-
-    const Mapspage(),// Index 0
-    const EsewaApp(title: 'esewa Aayush',),// Index 1
-    PropertyListScreen(),// Index 2
-    HomeScreen(),// Index 3
-    const RoomListingWidget(),
+    const Mapspage(), // Index 0
+    const EsewaApp(title: 'esewa Aayush'), // Index 1
+    PropertyListScreen(), // Index 2
+    HomeScreen(), // Index 3
+    const RoomListingWidget(), // Index 4
   ];
 
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-        bottomNavigationBar: CurvedNavigationBar(
-          key: _bottomNavigationKey,
-          index: _page,
-          // Your 5 icons
-          items: const <Widget>[
-            Icon(Icons.maps_home_work_outlined, size: 30),
-            Icon(Icons.message_outlined, size: 30),
-            Icon(Icons.perm_identity, size: 30),
-            Icon(Icons.help_outline_outlined, size: 30),
-            Icon(Icons.logout_outlined, size: 30),
-          ],
-          color: Colors.white,
-          buttonBackgroundColor: Colors.white,
-          backgroundColor: Colors.blueAccent,
-          animationCurve: Curves.easeInOut,
-          animationDuration: const Duration(milliseconds: 600),
-          onTap: (index) {
-            setState(() {
-              _page = index;
-            });
-          },
-          letIndexChange: (index) => true,
-        ),
-        body: Container(
-          color: Colors.blueAccent,
-          child: Center(
-            child: Column(
-              mainAxisAlignment: MainAxisAlignment.center,
-              children: <Widget>[
-                // Wrap the page in Expanded so it fills the available space
-                Expanded(
-                  child: _pages[_page],
-                ),
-
-                // Button to demonstrate programmatic control
-                // ElevatedButton(
-                //   child: const Text('Go To Page of index 1 (Map View)'),
-                //   onPressed: () {
-                //     final CurvedNavigationBarState? navBarState =
-                //         _bottomNavigationKey.currentState;
-                //     // This will now navigate to MapViewPage
-                //     navBarState?.setPage(1);
-                //   },
-                // ),
-                const SizedBox(height: 50),
-              ],
-            ),
-          ),
-        ));
+      bottomNavigationBar: CurvedNavigationBar(
+        key: _bottomNavigationKey,
+        index: _page,
+        // Your 5 icons
+        items: const <Widget>[
+          Icon(Icons.maps_home_work_outlined, size: 30),
+          Icon(Icons.message_outlined, size: 30),
+          Icon(Icons.perm_identity, size: 30),
+          Icon(Icons.help_outline_outlined, size: 30),
+          Icon(Icons.logout_outlined, size: 30),
+        ],
+        color: Colors.white,
+        buttonBackgroundColor: Colors.white,
+        backgroundColor: Colors.white10,
+        animationCurve: Curves.easeInOut,
+        animationDuration: const Duration(milliseconds: 600),
+        onTap: (index) {
+          setState(() {
+            _page = index;
+          });
+        },
+        letIndexChange: (index) => true,
+      ),
+      body: _pages[_page], // Directly show the current page without extra containers
+    );
   }
 }

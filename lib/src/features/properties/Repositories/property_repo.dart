@@ -29,4 +29,16 @@ class PropertyService {
       rethrow;
     }
   }
-}
+
+  Future<PropertyModel> getPropertyById(String id) async {
+    try {
+      final response = await ApiClient().dio.get('/properties/$id');
+      return PropertyModel.fromJson(response.data);
+    } on DioException catch (e) {
+      throw Exception(
+          'Failed to fetch property: ${e.response?.data ?? e.message}');
+    } catch (e) {
+      throw Exception('Failed to fetch property: $e');
+    }
+  }
+  }

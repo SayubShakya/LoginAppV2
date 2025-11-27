@@ -89,7 +89,7 @@ class HomeScreen extends StatelessWidget {
                       GestureDetector(
                         onTap: () {
                           // Navigation to the detail screen is kept
-                          Get.to(() => DetailScreen());
+                         // Get.to(() => DetailScreen());
                         },
                         child: _buildPropertyCard(
                           'assets/property1.jpg', // Make sure to add images to your assets folder

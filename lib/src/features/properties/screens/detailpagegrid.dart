@@ -1,7 +1,6 @@
 import 'package:flutter/material.dart';
 
-// --- Dummy Model for UI Demonstration ---
-// We need these models locally since the API-related imports were removed.
+
 class Articles {
   final String? title;
   final String? author;

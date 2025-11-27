@@ -2,13 +2,14 @@
 
 import 'package:get/get.dart';
 import 'package:loginappv2/src/features/authentication/services/token_manager.dart';
-import 'package:loginappv2/src/features/image_handle/image_handle_services.dart'; // NEW IMPORT
+import 'package:loginappv2/src/features/image_handle/image_handle_services.dart';
+import 'package:loginappv2/src/features/user_dashboard/screens/tenant_dashbaords/detail_screen.dart';
 import '../Repositories/property_repo.dart';
 import '../models/model_property.dart';
 
 class PropertyController extends GetxController {
   final PropertyService _service = PropertyService();
-  final ImageService _imageService = ImageService(); // INSTANTIATE SERVICE
+  final ImageService _imageService = ImageService();
 
   var propertyList = <PropertyModel>[].obs;
   var isLoading = false.obs;
@@ -33,20 +34,15 @@ class PropertyController extends GetxController {
 
       final properties = await _service.getProperties(page: page, limit: limit);
 
-      // --- CORE FIX: CACHE THE IMAGE FUTURE ---
+      // Cache the image future
       for (var property in properties) {
         final filename = property.image?.filename;
-
         if (filename != null && filename.isNotEmpty) {
-          // 🚀 Start the fetch and store the Future object.
-          // This prevents the widget from making multiple requests.
           property.imageFuture = _imageService.fetchImage(filename);
         }
       }
-      // ------------------------------------------
 
       propertyList.value = properties;
-
       print('✅ PropertyController: Successfully loaded ${properties.length} properties');
 
     } catch (e) {
@@ -74,7 +70,40 @@ class PropertyController extends GetxController {
     }
   }
 
-  // Debug method to check token status (remains the same)
+  // NEW METHOD: Get single property by ID
+  Future<PropertyModel> getPropertyById(String id) async {
+    try {
+      print('🔄 PropertyController: Fetching property by ID: $id');
+
+      await _debugTokenCheck();
+      final property = await _service.getPropertyById(id);
+
+      // Cache the image future for the single property
+      final filename = property.image?.filename;
+      if (filename != null && filename.isNotEmpty) {
+        property.imageFuture = _imageService.fetchImage(filename);
+      }
+
+      print('✅ PropertyController: Successfully loaded property: ${property.propertyTitle}');
+      return property;
+
+    } catch (e) {
+      print('❌ PropertyController Error (getPropertyById): $e');
+      throw Exception('Failed to load property details: ${e.toString().replaceAll('Exception: ', '')}');
+    }
+  }
+
+  // NEW METHOD: Navigate to property detail
+  void navigateToPropertyDetail(PropertyModel property) {
+    Get.to(
+          () => PropertyDetailScreen(
+        propertyId: property.id,
+        initialProperty: property, // Pass the object for immediate display
+      ),
+    );
+  }
+
+  // Debug method to check token status
   Future<void> _debugTokenCheck() async {
     try {
       final tokenManager = TokenManager();
