@@ -70,7 +70,7 @@ class PropertyController extends GetxController {
     }
   }
 
-  // NEW METHOD: Get single property by ID
+  // Get single property by ID
   Future<PropertyModel> getPropertyById(String id) async {
     try {
       print('🔄 PropertyController: Fetching property by ID: $id');
@@ -93,14 +93,26 @@ class PropertyController extends GetxController {
     }
   }
 
-  // NEW METHOD: Navigate to property detail
+  // Navigate to property detail
   void navigateToPropertyDetail(PropertyModel property) {
-    Get.to(
-          () => PropertyDetailScreen(
-        propertyId: property.id,
-        initialProperty: property, // Pass the object for immediate display
-      ),
-    );
+    try {
+      print('🔄 Navigating to property detail: ${property.id}');
+      Get.to(
+            () => PropertyDetailScreen(
+          propertyId: property.id,
+          initialProperty: property, // Pass the object for immediate display
+        ),
+        transition: Transition.cupertino, // Smooth transition
+        duration: const Duration(milliseconds: 300),
+      );
+    } catch (e) {
+      print('❌ Navigation error: $e');
+      Get.snackbar(
+        'Error',
+        'Failed to open property details',
+        snackPosition: SnackPosition.BOTTOM,
+      );
+    }
   }
 
   // Debug method to check token status

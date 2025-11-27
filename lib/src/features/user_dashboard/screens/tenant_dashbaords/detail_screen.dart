@@ -3,10 +3,10 @@
 import 'package:flutter/material.dart';
 import 'package:get/get.dart';
 import 'package:loginappv2/src/features/properties/controllers/property_controller.dart';
+
 import 'dart:typed_data';
 
 import '../../../properties/models/model_property.dart';
-
 
 class PropertyDetailScreen extends StatelessWidget {
   final String propertyId;
@@ -20,6 +20,9 @@ class PropertyDetailScreen extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    // Get the controller inside the build method
+    final PropertyController controller = Get.find<PropertyController>();
+
     return Scaffold(
       appBar: AppBar(
         backgroundColor: Colors.transparent,
@@ -33,13 +36,29 @@ class PropertyDetailScreen extends StatelessWidget {
       ),
       extendBodyBehindAppBar: true,
       body: FutureBuilder<PropertyModel>(
-        future: PropertyController().getPropertyById(propertyId),
+        future: controller.getPropertyById(propertyId),
         builder: (context, snapshot) {
           // Use initial data while loading, then update with fresh data
           final property = snapshot.hasData ? snapshot.data! : initialProperty;
 
-          if (property == null) {
+          if (property == null && snapshot.connectionState == ConnectionState.waiting) {
             return const Center(child: CircularProgressIndicator());
+          }
+
+          if (property == null) {
+            return const Center(
+              child: Column(
+                mainAxisAlignment: MainAxisAlignment.center,
+                children: [
+                  Icon(Icons.error_outline, size: 64, color: Colors.red),
+                  SizedBox(height: 16),
+                  Text(
+                    "Failed to load property details",
+                    style: TextStyle(fontSize: 16, color: Colors.red),
+                  ),
+                ],
+              ),
+            );
           }
 
           return Column(
@@ -142,23 +161,6 @@ class PropertyDetailScreen extends StatelessWidget {
             const SizedBox(height: 16),
             const Divider(),
             const SizedBox(height: 16),
-
-            // Contact Info
-            // Row(
-            //   children: [
-            //     const Icon(Icons.phone, color: Colors.grey),
-            //     const SizedBox(width: 8),
-            //     Text(
-            //       property.user?.phoneNumber ?? 'Not available',
-            //       style: const TextStyle(fontSize: 16),
-            //     ),
-            //     const Spacer(),
-            //     Text(
-            //       'Property Owned By: ${property.user?.fullName ?? 'Unknown'}',
-            //       style: TextStyle(color: Colors.grey[600]),
-            //     ),
-            //   ],
-            // ),
 
             const SizedBox(height: 16),
 

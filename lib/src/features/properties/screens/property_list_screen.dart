@@ -4,6 +4,7 @@ import 'package:flutter/material.dart';
 import 'package:get/get.dart';
 import 'dart:typed_data';
 import '../controllers/property_controller.dart';
+import '../models/model_property.dart';
 
 class PropertyListScreen extends StatelessWidget {
   final PropertyController controller = Get.put(PropertyController());
@@ -93,9 +94,9 @@ class PropertyListScreen extends StatelessWidget {
                               vertical: 14,
                             ),
                             prefixIcon: Icon(
-                              Icons.location_pin,
-                              color: Colors.grey[600],
-                              size:20
+                                Icons.location_pin,
+                                color: Colors.grey[600],
+                                size:20
                             ),
                           ),
                         ),
@@ -262,123 +263,129 @@ class PropertyListScreen extends StatelessWidget {
     );
   }
 
-  // Property Card Component
-  Widget _buildPropertyCard(property) {
-    return Container(
-      margin: const EdgeInsets.only(bottom: 16),
-      child: Card(
-        elevation: 2,
-        shape: RoundedRectangleBorder(
-          borderRadius: BorderRadius.circular(16),
-        ),
-        child: Column(
-          crossAxisAlignment: CrossAxisAlignment.start,
-          children: [
-            // Prominent full-width property image
-            _buildPropertyImage(property),
+  // Property Card Component with Tap Gesture
+  Widget _buildPropertyCard(PropertyModel property) {
+    return GestureDetector(
+      onTap: () {
+        // Navigate to detail screen when property card is tapped
+        controller.navigateToPropertyDetail(property);
+      },
+      child: Container(
+        margin: const EdgeInsets.only(bottom: 16),
+        child: Card(
+          elevation: 2,
+          shape: RoundedRectangleBorder(
+            borderRadius: BorderRadius.circular(16),
+          ),
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              // Prominent full-width property image
+              _buildPropertyImage(property),
 
-            // Property details section
-            Padding(
-              padding: const EdgeInsets.all(16),
-              child: Row(
-                crossAxisAlignment: CrossAxisAlignment.start,
-                children: [
-                  // Left side - Property info
-                  Expanded(
-                    child: Column(
-                      crossAxisAlignment: CrossAxisAlignment.start,
-                      children: [
-                        // Property Title
-                        Text(
-                          property.propertyTitle ?? "No Title",
-                          style: const TextStyle(
-                            fontSize: 18,
-                            fontWeight: FontWeight.bold,
-                            color: Colors.black87,
+              // Property details section
+              Padding(
+                padding: const EdgeInsets.all(16),
+                child: Row(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    // Left side - Property info
+                    Expanded(
+                      child: Column(
+                        crossAxisAlignment: CrossAxisAlignment.start,
+                        children: [
+                          // Property Title
+                          Text(
+                            property.propertyTitle ?? "No Title",
+                            style: const TextStyle(
+                              fontSize: 18,
+                              fontWeight: FontWeight.bold,
+                              color: Colors.black87,
+                            ),
+                            maxLines: 2,
+                            overflow: TextOverflow.ellipsis,
                           ),
-                          maxLines: 2,
-                          overflow: TextOverflow.ellipsis,
-                        ),
-                        const SizedBox(height: 8),
+                          const SizedBox(height: 8),
 
-                        // Location
-                        Row(
-                          children: [
-                            const Icon(
-                              Icons.location_on,
-                              size: 16,
+                          // Location
+                          Row(
+                            children: [
+                              const Icon(
+                                Icons.location_on,
+                                size: 16,
+                                color: Colors.grey,
+                              ),
+                              const SizedBox(width: 4),
+                              Expanded(
+                                child: Text(
+                                  property.location?.city ?? 'Unknown Location',
+                                  style: const TextStyle(
+                                    fontSize: 14,
+                                    color: Colors.grey,
+                                  ),
+                                  maxLines: 1,
+                                  overflow: TextOverflow.ellipsis,
+                                ),
+                              ),
+                            ],
+                          ),
+                          const SizedBox(height: 4),
+
+                          // Property Type
+                          Text(
+                            _getPropertyType(property.propertyTitle ?? ""),
+                            style: const TextStyle(
+                              fontSize: 14,
                               color: Colors.grey,
                             ),
-                            const SizedBox(width: 4),
-                            Expanded(
-                              child: Text(
-                                property.location?.city ?? 'Unknown Location',
-                                style: const TextStyle(
-                                  fontSize: 14,
-                                  color: Colors.grey,
-                                ),
-                                maxLines: 1,
-                                overflow: TextOverflow.ellipsis,
-                              ),
-                            ),
-                          ],
+                          ),
+                        ],
+                      ),
+                    ),
+
+                    const SizedBox(width: 16),
+
+                    // Right side - Rent and Availability
+                    Column(
+                      crossAxisAlignment: CrossAxisAlignment.end,
+                      children: [
+                        // Monthly Rent
+                        Text(
+                          "Rs.${property.rent ?? 'N/A'}",
+                          style: const TextStyle(
+                            fontSize: 20,
+                            fontWeight: FontWeight.bold,
+                            color: Colors.green,
+                          ),
                         ),
                         const SizedBox(height: 4),
 
-                        // Property Type
-                        Text(
-                          _getPropertyType(property.propertyTitle ?? ""),
-                          style: const TextStyle(
-                            fontSize: 14,
+                        // Per month text
+                        const Text(
+                          "/per month",
+                          style: TextStyle(
+                            fontSize: 12,
                             color: Colors.grey,
                           ),
                         ),
+                        const SizedBox(height: 8),
+
+                        // Availability Status
+                        _buildAvailabilityStatus(property.isActive ?? true),
                       ],
                     ),
-                  ),
-
-                  const SizedBox(width: 16),
-
-                  // Right side - Rent and Availability
-                  Column(
-                    crossAxisAlignment: CrossAxisAlignment.end,
-                    children: [
-                      // Monthly Rent
-                      Text(
-                        "Rs.${property.rent ?? 'N/A'}",
-                        style: const TextStyle(
-                          fontSize: 20,
-                          fontWeight: FontWeight.bold,
-                          color: Colors.green,
-                        ),
-                      ),
-                      const SizedBox(height: 4),
-
-                      // Per month text
-                      const Text(
-                        "/per month",
-                        style: TextStyle(
-                          fontSize: 12,
-                          color: Colors.grey,
-                        ),
-                      ),
-                      const SizedBox(height: 8),
-
-                      // Availability Status
-                      _buildAvailabilityStatus(true), // Change to false for 'Booked'
-                    ],
-                  ),
-                ],
+                  ],
+                ),
               ),
-            ),
-          ],
+            ],
+          ),
         ),
       ),
     );
   }
 
   // Property Image Component
-  Widget _buildPropertyImage(property) {
+  Widget _buildPropertyImage(PropertyModel property) {
     final imageFuture = property.imageFuture;
 
     return Container(
