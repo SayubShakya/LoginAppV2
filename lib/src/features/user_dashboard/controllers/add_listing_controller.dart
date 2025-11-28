@@ -2,30 +2,50 @@ import 'dart:io';
 import 'package:flutter/material.dart';
 import 'package:get/get.dart';
 import 'package:image_picker/image_picker.dart';
-import 'package:loginappv2/src/features/user_dashboard/services/property_service.dart';
-import '../models/property_model.dart';
+import 'package:geocoding/geocoding.dart';
+import 'package:loginappv2/src/features/image_handle/image_handle_services.dart';
+import 'package:loginappv2/src/features/user_dashboard/models/location/model_location.dart';
+
+// Import the PropertyService that has createProperty() and uploadImage()
+import 'package:loginappv2/src/features/user_dashboard/services/property_service.dart' hide PropertyTypeModel;
+
+// Import separate services for other features
+import 'package:loginappv2/src/features/property_type/property_type_model.dart';
+import 'package:loginappv2/src/features/authentication/models/user_model.dart';
+import 'package:loginappv2/src/features/image_handle/image_handle_model.dart';
+
+import '../../properties/models/model_property.dart';
 
 class AddListingController extends GetxController {
+  // Services
   final PropertyService _propertyService = Get.put(PropertyService());
+  final ImageService _imageService = Get.put(ImageService());
 
   // Form controllers
   final TextEditingController propertyTitleController = TextEditingController();
   final TextEditingController detailedDescriptionController = TextEditingController();
   final TextEditingController rentController = TextEditingController();
+  final TextEditingController streetAddressController = TextEditingController();
+  final TextEditingController postalCodeController = TextEditingController();
+  final TextEditingController areaNameController = TextEditingController();
+  final TextEditingController cityController = TextEditingController();
 
   // Reactive variables
   Rx<File?> coverImage = Rx<File?>(null);
   RxBool isLoading = false.obs;
+  RxBool isFetchingCoordinates = false.obs;
+
+  // Location coordinates (will be fetched based on user input)
+  RxDouble latitude = 0.0.obs;
+  RxDouble longitude = 0.0.obs;
 
   // Dropdown selections
   RxString selectedStatus = ''.obs;
   RxString selectedPropertyType = ''.obs;
-  RxString selectedLocation = ''.obs;
 
   // Dropdown lists
   RxList<DropdownItem> statusList = <DropdownItem>[].obs;
   RxList<DropdownItem> propertyTypeList = <DropdownItem>[].obs;
-  RxList<LocationModel> locationList = <LocationModel>[].obs;
 
   @override
   void onInit() {
@@ -35,7 +55,6 @@ class AddListingController extends GetxController {
 
   // Load dropdown data
   void loadDropdownData() {
-    // Example: Fetch from backend or static data
     statusList.assignAll([
       DropdownItem(id: 'available', name: 'Available'),
       DropdownItem(id: 'rented', name: 'Rented'),
@@ -48,33 +67,84 @@ class AddListingController extends GetxController {
       DropdownItem(id: 'room', name: 'Room'),
       DropdownItem(id: 'commercial', name: 'Commercial'),
     ]);
-
-    // Fetch locations from backend
-    fetchLocations();
   }
 
   // --- Image Picker ---
   Future<void> pickCoverImage(ImageSource source) async {
-    final picker = ImagePicker();
-    final XFile? pickedFile = await picker.pickImage(source: source, imageQuality: 80);
-    if (pickedFile != null) {
-      coverImage.value = File(pickedFile.path);
-    } else {
-      Get.snackbar('Error', 'No image selected', snackPosition: SnackPosition.BOTTOM);
+    try {
+      final picker = ImagePicker();
+      final XFile? pickedFile = await picker.pickImage(source: source, imageQuality: 80);
+      if (pickedFile != null) {
+        coverImage.value = File(pickedFile.path);
+      } else {
+        Get.snackbar('Error', 'No image selected', snackPosition: SnackPosition.BOTTOM);
+      }
+    } catch (e) {
+      Get.snackbar('Error', 'Failed to pick image: $e', snackPosition: SnackPosition.BOTTOM);
     }
   }
 
-  // --- Fetch Locations from backend ---
-  Future<void> fetchLocations() async {
-    try {
-      isLoading.value = true;
-      final fetchedLocations = await _propertyService.getLocations(page: 1, limit: 50);
-      locationList.assignAll(fetchedLocations as Iterable<LocationModel>);
-    } catch (e) {
-      Get.snackbar('Error', 'Failed to fetch locations: $e',
+  // --- Get Coordinates from Address using Geocoding ---
+  Future<void> getCoordinatesFromAddress() async {
+    if (streetAddressController.text.isEmpty ||
+        areaNameController.text.isEmpty ||
+        cityController.text.isEmpty) {
+      Get.snackbar('Error', 'Please enter street address, area, and city',
           snackPosition: SnackPosition.BOTTOM);
+      return;
+    }
+
+    try {
+      isFetchingCoordinates.value = true;
+
+      // Combine address components for better geocoding accuracy
+      String fullAddress = '${streetAddressController.text}, ${areaNameController.text}, ${cityController.text}, Nepal';
+
+      print('🔄 Geocoding address: $fullAddress');
+
+      // Use geocoding package to convert address to coordinates
+      List<Location> locations = await locationFromAddress(fullAddress);
+
+      if (locations.isNotEmpty) {
+        Location location = locations.first;
+        latitude.value = location.latitude;
+        longitude.value = location.longitude;
+
+        print('✅ Address geocoded successfully:');
+        print('   📍 Latitude: ${latitude.value}');
+        print('   📍 Longitude: ${longitude.value}');
+        print('   📍 Full Address: $fullAddress');
+
+        Get.snackbar('Success', 'Coordinates fetched successfully!',
+            snackPosition: SnackPosition.BOTTOM,
+            backgroundColor: Colors.green,
+            colorText: Colors.white,
+            duration: Duration(seconds: 3));
+      } else {
+        print('❌ No locations found for address: $fullAddress');
+        Get.snackbar('Not Found', 'Could not find coordinates for this address. Please check the address and try again.',
+            snackPosition: SnackPosition.BOTTOM,
+            duration: Duration(seconds: 4));
+      }
+    } catch (e) {
+      print('❌ Error geocoding address: $e');
+
+      // More specific error messages
+      if (e.toString().contains('NoResultFoundException') || e.toString().contains('no results')) {
+        Get.snackbar('Address Not Found', 'The address could not be found. Please check the spelling and try again.',
+            snackPosition: SnackPosition.BOTTOM,
+            duration: Duration(seconds: 4));
+      } else if (e.toString().contains('network') || e.toString().contains('Internet')) {
+        Get.snackbar('Network Error', 'Please check your internet connection and try again.',
+            snackPosition: SnackPosition.BOTTOM,
+            duration: Duration(seconds: 4));
+      } else {
+        Get.snackbar('Error', 'Failed to get coordinates: ${e.toString()}',
+            snackPosition: SnackPosition.BOTTOM,
+            duration: Duration(seconds: 4));
+      }
     } finally {
-      isLoading.value = false;
+      isFetchingCoordinates.value = false;
     }
   }
 
@@ -82,10 +152,24 @@ class AddListingController extends GetxController {
   Future<void> addProperty() async {
     if (isLoading.value) return;
 
+    // Validate required fields
     if (selectedStatus.value.isEmpty ||
         selectedPropertyType.value.isEmpty ||
-        selectedLocation.value.isEmpty) {
-      Get.snackbar('Error', 'Please select all dropdown fields',
+        streetAddressController.text.isEmpty ||
+        postalCodeController.text.isEmpty ||
+        propertyTitleController.text.isEmpty ||
+        detailedDescriptionController.text.isEmpty ||
+        rentController.text.isEmpty ||
+        areaNameController.text.isEmpty ||
+        cityController.text.isEmpty) {
+      Get.snackbar('Error', 'Please fill all required fields',
+          snackPosition: SnackPosition.BOTTOM);
+      return;
+    }
+
+    // Validate coordinates are fetched
+    if (latitude.value == 0.0 || longitude.value == 0.0) {
+      Get.snackbar('Error', 'Please get location coordinates first by clicking "Get Coordinates"',
           snackPosition: SnackPosition.BOTTOM);
       return;
     }
@@ -93,51 +177,89 @@ class AddListingController extends GetxController {
     isLoading.value = true;
 
     try {
-      String? imageId;
+      String? imageUrl;
 
+      // --- Image Upload Section ---
       if (coverImage.value != null) {
-        final uploadedImage = await _propertyService.uploadImage(coverImage.value!.path);
-        if (uploadedImage != null && uploadedImage['image_id'] != null) {
-          imageId = uploadedImage['image_id'];
-        } else {
-          Get.snackbar('Error', 'Failed to upload image',
+        try {
+          print('🔄 Starting image upload...');
+          final filename = await _imageService.uploadImage(coverImage.value!);
+
+          if (filename != null && filename.isNotEmpty) {
+            imageUrl = 'http://10.10.10.203:5000/uploads/$filename';
+            print('✅ Image uploaded successfully: $imageUrl');
+          } else {
+            Get.snackbar('Error', 'Failed to upload image - no filename returned',
+                snackPosition: SnackPosition.BOTTOM);
+            isLoading.value = false;
+            return;
+          }
+        } catch (e) {
+          print('❌ Image upload error: $e');
+          Get.snackbar('Error', 'Failed to upload image: $e',
               snackPosition: SnackPosition.BOTTOM);
           isLoading.value = false;
           return;
         }
+      } else {
+        print('ℹ️ No cover image selected, proceeding without image');
       }
 
-      // Get selected location for lat/lng
-      final selectedLoc = locationList.firstWhere((loc) => loc.id == selectedLocation.value);
-
+      // Create PropertyModel with user-input location and fetched coordinates
       final newProperty = PropertyModel(
+        id: '',
         propertyTitle: propertyTitleController.text,
         detailedDescription: detailedDescriptionController.text,
-        rent: double.tryParse(rentController.text) ?? 0.0,
-        coverImageUrl: imageId,
-        status: selectedStatus.value,
-        propertyTypesId: selectedPropertyType.value,
-        locationId: selectedLocation.value,
-        latitude: selectedLoc.latitude,
-        longitude: selectedLoc.longitude,
-        userId: 'landlordUserId123', // Replace with actual logged-in user
+        rent: int.tryParse(rentController.text) ?? 0,
+        isActive: true,
+        image: imageUrl != null ? ImageModel(path: imageUrl) : null,
+        propertyType: PropertyTypeModel(
+          id: selectedPropertyType.value,
+          name: '',
+          isActive: true,
+          createdDate: DateTime.now().toIso8601String(),
+          updatedDate: DateTime.now().toIso8601String(),
+        ),
+        user: UserModel(
+          id: 'current-user-id',
+          firstName: 'Demo',
+          lastName: 'User',
+          email: 'demo@example.com',
+        ),
+        location: LocationModel(
+          id: '',
+          streetAddress: streetAddressController.text,
+          areaName: areaNameController.text,
+          city: cityController.text,
+          postalCode: postalCodeController.text,
+          latitude: latitude.value,
+          longitude: longitude.value,
+          isActive: true,
+        ),
       );
 
+      // Create property using PropertyService
       final createdProperty = await _propertyService.createProperty(newProperty);
 
       if (createdProperty != null) {
         Get.snackbar('Success', 'Property listed successfully!',
-            snackPosition: SnackPosition.TOP,
-            backgroundColor: Colors.green.shade400,
-            colorText: Colors.white);
+            snackPosition: SnackPosition.BOTTOM,
+            backgroundColor: Colors.green,
+            colorText: Colors.white,
+            duration: Duration(seconds: 3));
         clearForm();
         Get.back();
       } else {
-        Get.snackbar('Error', 'Failed to list property', snackPosition: SnackPosition.BOTTOM);
+        Get.snackbar('Error', 'Failed to list property',
+            snackPosition: SnackPosition.BOTTOM,
+            duration: Duration(seconds: 3));
       }
+
     } catch (e) {
-      Get.snackbar('Error', 'Unexpected error: $e', snackPosition: SnackPosition.BOTTOM);
-      print('Error: $e');
+      print('❌ Property creation error: $e');
+      Get.snackbar('Error', 'Failed to create property: $e',
+          snackPosition: SnackPosition.BOTTOM,
+          duration: Duration(seconds: 4));
     } finally {
       isLoading.value = false;
     }
@@ -147,10 +269,15 @@ class AddListingController extends GetxController {
     propertyTitleController.clear();
     detailedDescriptionController.clear();
     rentController.clear();
+    streetAddressController.clear();
+    postalCodeController.clear();
+    areaNameController.clear();
+    cityController.clear();
     coverImage.value = null;
     selectedStatus.value = '';
     selectedPropertyType.value = '';
-    selectedLocation.value = '';
+    latitude.value = 0.0;
+    longitude.value = 0.0;
   }
 
   @override
@@ -158,39 +285,17 @@ class AddListingController extends GetxController {
     propertyTitleController.dispose();
     detailedDescriptionController.dispose();
     rentController.dispose();
+    streetAddressController.dispose();
+    postalCodeController.dispose();
+    areaNameController.dispose();
+    cityController.dispose();
     super.onClose();
   }
 }
 
-// --- Simple models for dropdowns ---
+// --- Simple model for dropdowns ---
 class DropdownItem {
   final String id;
   final String name;
   DropdownItem({required this.id, required this.name});
-}
-
-class LocationModel {
-  final String id;
-  final String city;
-  final String areaName;
-  final double latitude;
-  final double longitude;
-
-  LocationModel({
-    required this.id,
-    required this.city,
-    required this.areaName,
-    required this.latitude,
-    required this.longitude,
-  });
-
-  factory LocationModel.fromJson(Map<String, dynamic> json) {
-    return LocationModel(
-      id: json['id'],
-      city: json['city'] ?? '',
-      areaName: json['area_name'] ?? '',
-      latitude: (json['latitude'] as num).toDouble(),
-      longitude: (json['longitude'] as num).toDouble(),
-    );
-  }
 }

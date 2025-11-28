@@ -38,7 +38,7 @@ class PropertyModel {
     this.status,
     this.createdDate,
     this.updatedDate,
-    this.imageFuture, // Added to the constructor
+    this.imageFuture,
   });
 
   static Map<String, dynamic> _normalize(Map? m) {
@@ -72,7 +72,21 @@ class PropertyModel {
       status: statusJson.isNotEmpty ? StatusModel.fromJson(statusJson) : null,
       createdDate: DateTime.tryParse(json['created_date']?.toString() ?? ''),
       updatedDate: DateTime.tryParse(json['updated_date']?.toString() ?? ''),
-      // imageFuture remains null here, set by the controller
     );
+  }
+
+  // 🌟 JUST ADD THIS METHOD - Everything else stays the same
+  Map<String, dynamic> toJson() {
+    return {
+      'property_title': propertyTitle,
+      'detailed_description': detailedDescription,
+      'rent': rent,
+      'is_active': isActive ?? true,
+      'cover_image_url': image?.path,
+      'property_types_id': propertyType?.id,
+      'user_id': user?.id,
+      'status_id': status?.id,
+      'location': location?.toJson(),
+    };
   }
 }

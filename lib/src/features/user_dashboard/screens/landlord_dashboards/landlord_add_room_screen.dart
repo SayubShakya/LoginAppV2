@@ -19,7 +19,7 @@ class AddListingScreen extends StatelessWidget {
 
     return Scaffold(
       appBar: AppBar(
-        title: const Text('Add New Room/Property'),
+        title: const Text('Add New Property'),
         backgroundColor: Colors.blueAccent,
         foregroundColor: Colors.white,
       ),
@@ -40,7 +40,7 @@ class AddListingScreen extends StatelessWidget {
                 TextFormField(
                   controller: controller.propertyTitleController,
                   decoration: const InputDecoration(
-                    labelText: 'Property Title',
+                    labelText: 'Property Title *',
                     border: OutlineInputBorder(),
                     prefixIcon: Icon(Icons.title),
                   ),
@@ -57,7 +57,7 @@ class AddListingScreen extends StatelessWidget {
                   minLines: 3,
                   maxLines: 5,
                   decoration: const InputDecoration(
-                    labelText: 'Detailed Description',
+                    labelText: 'Detailed Description *',
                     border: OutlineInputBorder(),
                     prefixIcon: Icon(Icons.description),
                   ),
@@ -73,7 +73,7 @@ class AddListingScreen extends StatelessWidget {
                   controller: controller.rentController,
                   keyboardType: TextInputType.number,
                   decoration: const InputDecoration(
-                    labelText: 'Rent Amount',
+                    labelText: 'Rent Amount *',
                     border: OutlineInputBorder(),
                     prefixIcon: Icon(Icons.money),
                     suffixText: 'NPR',
@@ -98,7 +98,7 @@ class AddListingScreen extends StatelessWidget {
                       ? null
                       : controller.selectedStatus.value,
                   decoration: const InputDecoration(
-                    labelText: 'Status',
+                    labelText: 'Status *',
                     border: OutlineInputBorder(),
                     prefixIcon: Icon(Icons.info_outline),
                   ),
@@ -125,7 +125,7 @@ class AddListingScreen extends StatelessWidget {
                       ? null
                       : controller.selectedPropertyType.value,
                   decoration: const InputDecoration(
-                    labelText: 'Property Type',
+                    labelText: 'Property Type *',
                     border: OutlineInputBorder(),
                     prefixIcon: Icon(Icons.category),
                   ),
@@ -142,32 +142,172 @@ class AddListingScreen extends StatelessWidget {
                   value == null ? 'Select property type' : null,
                 )),
 
+                const SizedBox(height: 20),
+
+                // -------------------------------
+                // LOCATION SECTION
+                // -------------------------------
+                const Text(
+                  "Location Details",
+                  style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold),
+                ),
+                const SizedBox(height: 16),
+
+                // Street Address
+                TextFormField(
+                  controller: controller.streetAddressController,
+                  decoration: const InputDecoration(
+                    labelText: 'Street Address *',
+                    border: OutlineInputBorder(),
+                    prefixIcon: Icon(Icons.home),
+                    hintText: 'e.g., Lazimpat Road 12',
+                  ),
+                  validator: (value) =>
+                  value!.isEmpty ? 'Enter street address' : null,
+                ),
+                const SizedBox(height: 16),
+
+                // Area Name
+                TextFormField(
+                  controller: controller.areaNameController,
+                  decoration: const InputDecoration(
+                    labelText: 'Area Name *',
+                    border: OutlineInputBorder(),
+                    prefixIcon: Icon(Icons.location_city),
+                    hintText: 'e.g., Lazimpat',
+                  ),
+                  validator: (value) =>
+                  value!.isEmpty ? 'Enter area name' : null,
+                ),
+                const SizedBox(height: 16),
+
+                // City
+                TextFormField(
+                  controller: controller.cityController,
+                  decoration: const InputDecoration(
+                    labelText: 'City *',
+                    border: OutlineInputBorder(),
+                    prefixIcon: Icon(Icons.location_city),
+                    hintText: 'e.g., Kathmandu',
+                  ),
+                  validator: (value) =>
+                  value!.isEmpty ? 'Enter city' : null,
+                ),
+                const SizedBox(height: 16),
+
+                // Postal Code
+                TextFormField(
+                  controller: controller.postalCodeController,
+                  keyboardType: TextInputType.number,
+                  decoration: const InputDecoration(
+                    labelText: 'Postal Code *',
+                    border: OutlineInputBorder(),
+                    prefixIcon: Icon(Icons.markunread_mailbox),
+                    hintText: 'e.g., 44600',
+                  ),
+                  validator: (value) {
+                    if (value == null || value.isEmpty) {
+                      return 'Enter postal code';
+                    }
+                    return null;
+                  },
+                ),
+
                 const SizedBox(height: 16),
 
                 // -------------------------------
-                // LOCATION DROPDOWN
+                // GET COORDINATES BUTTON
                 // -------------------------------
-                Obx(() => DropdownButtonFormField<String>(
-                  value: controller.selectedLocation.value.isEmpty
-                      ? null
-                      : controller.selectedLocation.value,
-                  decoration: const InputDecoration(
-                    labelText: 'Location',
-                    border: OutlineInputBorder(),
-                    prefixIcon: Icon(Icons.location_on),
+                Obx(() => SizedBox(
+                  width: double.infinity,
+                  child: ElevatedButton.icon(
+                    onPressed: controller.isFetchingCoordinates.value
+                        ? null
+                        : controller.getCoordinatesFromAddress,
+                    style: ElevatedButton.styleFrom(
+                      backgroundColor: Colors.blue,
+                      padding: const EdgeInsets.symmetric(vertical: 12),
+                    ),
+                    icon: controller.isFetchingCoordinates.value
+                        ? SizedBox(
+                      height: 16,
+                      width: 16,
+                      child: CircularProgressIndicator(
+                        strokeWidth: 2,
+                        valueColor: AlwaysStoppedAnimation<Color>(Colors.white),
+                      ),
+                    )
+                        : Icon(Icons.location_on),
+                    label: controller.isFetchingCoordinates.value
+                        ? Text('Fetching Coordinates...')
+                        : Text('Get Coordinates from Address'),
                   ),
-                  items: controller.locationList
-                      .map((loc) => DropdownMenuItem(
-                    value: loc.id,
-                    child: Text('${loc.city} ${loc.areaName}'),
-                  ))
-                      .toList(),
-                  onChanged: (value) =>
-                  controller.selectedLocation.value =
-                      value ?? '',
-                  validator: (value) =>
-                  value == null ? 'Select location' : null,
                 )),
+
+                const SizedBox(height: 16),
+
+                // -------------------------------
+                // COORDINATES DISPLAY
+                // -------------------------------
+                Obx(() => controller.latitude.value != 0.0 && controller.longitude.value != 0.0
+                    ? Container(
+                  padding: EdgeInsets.all(12),
+                  decoration: BoxDecoration(
+                    color: Colors.green[50],
+                    borderRadius: BorderRadius.circular(8),
+                    border: Border.all(color: Colors.green),
+                  ),
+                  child: Row(
+                    children: [
+                      Icon(Icons.check_circle, color: Colors.green, size: 20),
+                      SizedBox(width: 8),
+                      Expanded(
+                        child: Column(
+                          crossAxisAlignment: CrossAxisAlignment.start,
+                          children: [
+                            Text(
+                              'Coordinates Ready',
+                              style: TextStyle(
+                                color: Colors.green[800],
+                                fontWeight: FontWeight.bold,
+                              ),
+                            ),
+                            SizedBox(height: 4),
+                            Text(
+                              'Lat: ${controller.latitude.value.toStringAsFixed(6)}',
+                              style: TextStyle(color: Colors.green[700]),
+                            ),
+                            Text(
+                              'Lng: ${controller.longitude.value.toStringAsFixed(6)}',
+                              style: TextStyle(color: Colors.green[700]),
+                            ),
+                          ],
+                        ),
+                      ),
+                    ],
+                  ),
+                )
+                    : Container(
+                  padding: EdgeInsets.all(12),
+                  decoration: BoxDecoration(
+                    color: Colors.orange[50],
+                    borderRadius: BorderRadius.circular(8),
+                    border: Border.all(color: Colors.orange),
+                  ),
+                  child: Row(
+                    children: [
+                      Icon(Icons.info, color: Colors.orange, size: 20),
+                      SizedBox(width: 8),
+                      Expanded(
+                        child: Text(
+                          'Click "Get Coordinates" to fetch location coordinates',
+                          style: TextStyle(color: Colors.orange[800]),
+                        ),
+                      ),
+                    ],
+                  ),
+                ),
+                ),
 
                 const SizedBox(height: 20),
 
@@ -176,8 +316,7 @@ class AddListingScreen extends StatelessWidget {
                 // -------------------------------
                 const Text(
                   "Cover Image",
-                  style: TextStyle(
-                      fontSize: 16, fontWeight: FontWeight.bold),
+                  style: TextStyle(fontSize: 16, fontWeight: FontWeight.bold),
                 ),
                 const SizedBox(height: 8),
 
@@ -224,10 +363,8 @@ class AddListingScreen extends StatelessWidget {
                           right: 10,
                           top: 10,
                           child: IconButton(
-                            icon: const Icon(Icons.delete,
-                                color: Colors.red),
-                            onPressed: () =>
-                            controller.coverImage.value = null,
+                            icon: const Icon(Icons.delete, color: Colors.red),
+                            onPressed: () => controller.coverImage.value = null,
                           ),
                         )
                       ],
@@ -251,11 +388,22 @@ class AddListingScreen extends StatelessWidget {
                     style: ElevatedButton.styleFrom(
                       backgroundColor: Colors.green,
                       padding: const EdgeInsets.symmetric(vertical: 15),
+                      shape: RoundedRectangleBorder(
+                        borderRadius: BorderRadius.circular(8),
+                      ),
                     ),
-                    child: const Text(
+                    child: controller.isLoading.value
+                        ? const SizedBox(
+                      height: 20,
+                      width: 20,
+                      child: CircularProgressIndicator(
+                        strokeWidth: 2,
+                        valueColor: AlwaysStoppedAnimation<Color>(Colors.white),
+                      ),
+                    )
+                        : const Text(
                       "LIST PROPERTY NOW",
-                      style: TextStyle(
-                          fontSize: 18, color: Colors.white),
+                      style: TextStyle(fontSize: 18, color: Colors.white),
                     ),
                   ),
                 ),
