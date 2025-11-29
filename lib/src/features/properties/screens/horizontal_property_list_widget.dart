@@ -13,100 +13,113 @@ class HorizontalPropertyListWidget extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    return Column(
-      crossAxisAlignment: CrossAxisAlignment.start,
-      children: [
-        // Header with title and view all button
-        Padding(
-          padding: const EdgeInsets.symmetric(
-            horizontal: 20,
-            vertical: 0,
-          ),
+    final bottomPadding = MediaQuery.of(context).padding.bottom + 16.0;
 
-        ),
-
-        // Horizontal property list
-        Obx(() {
-          // Loading State
-          if (controller.isLoading.value) {
-            return const SizedBox(
-              height: 50,
-              child: Center(child: CircularProgressIndicator()),
-            );
-          }
-
-          // Error State
-          if (controller.hasError.value) {
-            return SizedBox(
-              height: 320,
-              child: Center(
-                child: Column(
-                  mainAxisAlignment: MainAxisAlignment.center,
-                  children: [
-                    const Icon(Icons.error_outline, size: 64, color: Colors.red),
-                    const SizedBox(height: 16),
-                    Text(
-                      controller.errorMessage.value,
-                      textAlign: TextAlign.center,
-                      style: const TextStyle(fontSize: 16, color: Colors.red),
-                    ),
-                    const SizedBox(height: 20),
-                    ElevatedButton(
-                      onPressed: controller.retryFetch,
-                      child: const Text('Try Again'),
-                    ),
-                  ],
-                ),
+    return SafeArea(
+      child: SingleChildScrollView(
+        physics: const ClampingScrollPhysics(),
+        child: Padding(
+          // Keep safe bottom padding here, not inside the horizontal ListView
+          padding: EdgeInsets.only(left: 0, right: 0, bottom: bottomPadding),
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            mainAxisSize: MainAxisSize.min,
+            children: [
+              const Padding(
+                padding: EdgeInsets.symmetric(horizontal: 20, vertical: 0),
               ),
-            );
-          }
 
-          // Empty State
-          if (controller.propertyList.isEmpty) {
-            return SizedBox(
-              height: 320,
-              child: const Center(
-                child: Column(
-                  mainAxisAlignment: MainAxisAlignment.center,
-                  children: [
-                    Icon(Icons.search_off, size: 64, color: Colors.grey),
-                    SizedBox(height: 16),
-                    Text(
-                      "No properties found.",
-                      style: TextStyle(fontSize: 16, color: Colors.grey),
+              Obx(() {
+                if (controller.isLoading.value) {
+                  return const SizedBox(
+                    height: 50,
+                    child: Center(child: CircularProgressIndicator()),
+                  );
+                }
+
+                if (controller.hasError.value) {
+                  return SizedBox(
+                    height: 320,
+                    child: Center(
+                      child: Column(
+                        mainAxisAlignment: MainAxisAlignment.center,
+                        children: [
+                          const Icon(Icons.error_outline, size: 64, color: Colors.red),
+                          const SizedBox(height: 16),
+                          Text(
+                            controller.errorMessage.value,
+                            textAlign: TextAlign.center,
+                            style: const TextStyle(fontSize: 16, color: Colors.red),
+                          ),
+                          const SizedBox(height: 20),
+                          ElevatedButton(
+                            onPressed: controller.retryFetch,
+                            child: const Text('Try Again'),
+                          ),
+                        ],
+                      ),
                     ),
-                  ],
-                ),
-              ),
-            );
-          }
+                  );
+                }
 
-          // Horizontal Property List
-          return SizedBox(
-            height: 260,
-            child: ListView.builder(
-              scrollDirection: Axis.horizontal,
-              padding: const EdgeInsets.symmetric(horizontal: 16),
-              itemCount: controller.propertyList.length,
-              itemBuilder: (context, index) {
-                final property = controller.propertyList[index];
-                return SizedBox(
-                  width: 280,
-                  child: _buildPropertyCard(property),
+                if (controller.propertyList.isEmpty) {
+                  return SizedBox(
+                    height: 320,
+                    child: const Center(
+                      child: Column(
+                        mainAxisAlignment: MainAxisAlignment.center,
+                        children: [
+                          Icon(Icons.search_off, size: 64, color: Colors.grey),
+                          SizedBox(height: 16),
+                          Text(
+                            "No properties found.",
+                            style: TextStyle(fontSize: 16, color: Colors.grey),
+                          ),
+                        ],
+                      ),
+                    ),
+                  );
+                }
+
+                // Horizontal list: do NOT add bottomPadding here (cross-axis)
+                return Column(
+                  mainAxisSize: MainAxisSize.min,
+                  children: [
+                    SizedBox(
+                      height: 280, // fixed height for cards
+                      child: ListView.builder(
+                        scrollDirection: Axis.horizontal,
+                        // only horizontal padding so cross-axis size doesn't increase
+                        padding: const EdgeInsets.symmetric(horizontal: 16),
+                        itemCount: controller.propertyList.length,
+                        shrinkWrap: true,
+                        physics: const ClampingScrollPhysics(),
+                        itemBuilder: (context, index) {
+                          final property = controller.propertyList[index];
+                          return SizedBox(
+                            width: 280,
+                            child: _buildPropertyCard(property),
+                          );
+                        },
+                      ),
+                    ),
+                    const SizedBox(height: 8),
+                  ],
                 );
-              },
-            ),
-          );
-        }),
-      ],
+              }),
+            ],
+          ),
+        ),
+      ),
     );
   }
 
-  // Property Card Component (modified for horizontal layout)
   Widget _buildPropertyCard(property) {
     return Container(
+      height: double.infinity,
       margin: const EdgeInsets.only(right: 16),
       child: Card(
+        clipBehavior: Clip.hardEdge,
         elevation: 2,
         shape: RoundedRectangleBorder(
           borderRadius: BorderRadius.circular(16),
@@ -114,93 +127,92 @@ class HorizontalPropertyListWidget extends StatelessWidget {
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
-            // Property image
-            _buildPropertyImage(property),
-
-            // Property details section
-            Padding(
-              padding: const EdgeInsets.all(16),
-              child: Column(
-                crossAxisAlignment: CrossAxisAlignment.start,
-                children: [
-                  // Property Title
-                  Text(
-                    property.propertyTitle ?? "No Title",
-                    style: const TextStyle(
-                      fontSize: 18,
-                      fontWeight: FontWeight.bold,
-                      color: Colors.black87,
-                    ),
-                    maxLines: 2,
-                    overflow: TextOverflow.ellipsis,
-                  ),
-                  const SizedBox(height: 0),
-
-                  // Location
-                  Row(
-                    children: [
-                      const Icon(
-                        Icons.location_on,
-                        size: 16,
-                        color: Colors.grey,
+            SizedBox(
+              height: 120,
+              width: double.infinity,
+              child: _buildPropertyImage(property),
+            ),
+            Expanded(
+              child: Padding(
+                padding: const EdgeInsets.all(12),
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  mainAxisSize: MainAxisSize.max,
+                  children: [
+                    Text(
+                      property.propertyTitle ?? "No Title",
+                      style: const TextStyle(
+                        fontSize: 18,
+                        fontWeight: FontWeight.bold,
+                        color: Colors.black87,
                       ),
-                      const SizedBox(width: 4),
-                      Expanded(
-                        child: Text(
-                          property.location?.city ?? 'Unknown Location',
-                          style: const TextStyle(
-                            fontSize: 14,
-                            color: Colors.grey,
-                          ),
-                          maxLines: 1,
-                          overflow: TextOverflow.ellipsis,
+                      maxLines: 1,
+                      overflow: TextOverflow.ellipsis,
+                    ),
+                    const SizedBox(height: 4),
+                    Row(
+                      children: [
+                        const Icon(
+                          Icons.location_on,
+                          size: 16,
+                          color: Colors.grey,
                         ),
-                      ),
-                    ],
-                  ),
-                  const SizedBox(height: 4),
-
-                  // Property Type
-                  Text(
-                    _getPropertyType(property.propertyTitle ?? ""),
-                    style: const TextStyle(
-                      fontSize: 14,
-                      color: Colors.grey,
-                    ),
-                  ),
-                  const SizedBox(height: 8),
-
-                  // Rent and Availability row
-                  Row(
-                    mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                    children: [
-                      // Monthly Rent
-                      Column(
-                        crossAxisAlignment: CrossAxisAlignment.start,
-                        children: [
-                          Text(
-                            "Rs.${property.rent ?? 'N/A'}",
+                        const SizedBox(width: 4),
+                        Expanded(
+                          child: Text(
+                            property.location?.city ?? 'Unknown Location',
                             style: const TextStyle(
-                              fontSize: 20,
-                              fontWeight: FontWeight.bold,
-                              color: Colors.green,
-                            ),
-                          ),
-                          const Text(
-                            "/per month",
-                            style: TextStyle(
-                              fontSize: 12,
+                              fontSize: 14,
                               color: Colors.grey,
                             ),
+                            maxLines: 1,
+                            overflow: TextOverflow.ellipsis,
                           ),
-                        ],
+                        ),
+                      ],
+                    ),
+                    const SizedBox(height: 4),
+                    Text(
+                      _getPropertyType(property.propertyTitle ?? ""),
+                      style: const TextStyle(
+                        fontSize: 14,
+                        color: Colors.grey,
                       ),
-
-                      // Availability Status
-                      _buildAvailabilityStatus(true),
-                    ],
-                  ),
-                ],
+                      maxLines: 1,
+                      overflow: TextOverflow.ellipsis,
+                    ),
+                    const Spacer(),
+                    Row(
+                      mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                      children: [
+                        Column(
+                          crossAxisAlignment: CrossAxisAlignment.start,
+                          mainAxisSize: MainAxisSize.min,
+                          children: [
+                            Text(
+                              "Rs.${property.rent ?? 'N/A'}",
+                              style: const TextStyle(
+                                fontSize: 20,
+                                fontWeight: FontWeight.bold,
+                                color: Colors.green,
+                              ),
+                              maxLines: 1,
+                              overflow: TextOverflow.ellipsis,
+                            ),
+                            const Text(
+                              "/per month",
+                              style: TextStyle(
+                                fontSize: 12,
+                                color: Colors.grey,
+                              ),
+                            ),
+                          ],
+                        ),
+                        _buildAvailabilityStatus(true),
+                      ],
+                    ),
+                  ],
+                ),
               ),
             ),
           ],
@@ -209,20 +221,12 @@ class HorizontalPropertyListWidget extends StatelessWidget {
     );
   }
 
-  // Property Image Component
   Widget _buildPropertyImage(property) {
     final imageFuture = property.imageFuture;
 
     return Container(
-      height: 160,
       width: double.infinity,
-      decoration: BoxDecoration(
-        borderRadius: const BorderRadius.only(
-          topLeft: Radius.circular(16),
-          topRight: Radius.circular(16),
-        ),
-        color: Colors.grey[300],
-      ),
+      color: Colors.grey[300],
       child: imageFuture == null
           ? _buildPlaceholderImage()
           : FutureBuilder<Uint8List?>(
@@ -231,38 +235,22 @@ class HorizontalPropertyListWidget extends StatelessWidget {
           if (snapshot.connectionState == ConnectionState.waiting) {
             return _buildLoadingImage();
           }
-
           if (snapshot.hasError || snapshot.data == null) {
             return _buildErrorImage();
           }
-
-          return _buildPropertyImageContent(snapshot.data!);
+          return Image.memory(
+            snapshot.data!,
+            fit: BoxFit.cover,
+            width: double.infinity,
+            height: double.infinity,
+          );
         },
       ),
     );
   }
 
-  Widget _buildPropertyImageContent(Uint8List imageData) {
-    return ClipRRect(
-      borderRadius: const BorderRadius.only(
-        topLeft: Radius.circular(16),
-        topRight: Radius.circular(16),
-      ),
-      child: Image.memory(
-        imageData,
-        fit: BoxFit.cover,
-        width: double.infinity,
-        height: 160,
-      ),
-    );
-  }
-
   Widget _buildPlaceholderImage() {
-    return const ClipRRect(
-      borderRadius: BorderRadius.only(
-        topLeft: Radius.circular(16),
-        topRight: Radius.circular(16),
-      ),
+    return const Center(
       child: Column(
         mainAxisAlignment: MainAxisAlignment.center,
         children: [
@@ -278,26 +266,16 @@ class HorizontalPropertyListWidget extends StatelessWidget {
   }
 
   Widget _buildLoadingImage() {
-    return const ClipRRect(
-      borderRadius: BorderRadius.only(
-        topLeft: Radius.circular(16),
-        topRight: Radius.circular(16),
-      ),
-      child: Center(
-        child: CircularProgressIndicator(
-          strokeWidth: 2,
-          valueColor: AlwaysStoppedAnimation<Color>(Color(0xFF4C3E71)),
-        ),
+    return const Center(
+      child: CircularProgressIndicator(
+        strokeWidth: 2,
+        valueColor: AlwaysStoppedAnimation<Color>(Color(0xFF4C3E71)),
       ),
     );
   }
 
   Widget _buildErrorImage() {
-    return const ClipRRect(
-      borderRadius: BorderRadius.only(
-        topLeft: Radius.circular(16),
-        topRight: Radius.circular(16),
-      ),
+    return const Center(
       child: Column(
         mainAxisAlignment: MainAxisAlignment.center,
         children: [
@@ -312,7 +290,6 @@ class HorizontalPropertyListWidget extends StatelessWidget {
     );
   }
 
-  // Availability Status Component
   Widget _buildAvailabilityStatus(bool isAvailable) {
     return Row(
       mainAxisSize: MainAxisSize.min,
@@ -338,15 +315,15 @@ class HorizontalPropertyListWidget extends StatelessWidget {
     );
   }
 
-  // Helper method to determine property type from title
   String _getPropertyType(String title) {
-    if (title.toLowerCase().contains('hall')) {
+    final lower = title.toLowerCase();
+    if (lower.contains('hall')) {
       return 'Commercial Hall';
-    } else if (title.toLowerCase().contains('flat')) {
+    } else if (lower.contains('flat')) {
       return 'Residential Flat';
-    } else if (title.toLowerCase().contains('house')) {
+    } else if (lower.contains('house')) {
       return 'Residential House';
-    } else if (title.toLowerCase().contains('apartment')) {
+    } else if (lower.contains('apartment')) {
       return 'Residential Apartment';
     } else {
       return 'Property';

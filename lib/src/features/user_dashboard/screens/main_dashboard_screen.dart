@@ -42,10 +42,10 @@ class _UserDashboardState extends State<UserDashboard> {
         // Your 5 icons
         items: const <Widget>[
           Icon(Icons.maps_home_work_outlined, size: 30),
+          Icon(Icons.payments, size: 30),
+          Icon(Icons.room_outlined, size: 30),
           Icon(Icons.message_outlined, size: 30),
-          Icon(Icons.perm_identity, size: 30),
-          Icon(Icons.help_outline_outlined, size: 30),
-          Icon(Icons.logout_outlined, size: 30),
+          Icon(Icons.person_2_outlined, size: 30),
         ],
         color: Colors.white,
         buttonBackgroundColor: Colors.white,

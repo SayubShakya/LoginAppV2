@@ -27,8 +27,7 @@ class MapspageState extends State<Mapspage> {
     zoom: 12.0,
   );
 
-  // Sample locations data matching your image
-  // Sample locations data matching your image
+  // Updated locations data: name is property title, area is a short description
   final List<MapLocation> locations = [
     MapLocation(name: '1 BHK Room near Ringroad', area: 'Affordable & Clean', position: LatLng(27.7300, 85.3000)),
     MapLocation(name: '3 BHK Luxury Apartment, Maharajgunj', area: 'Spacious & Modern', position: LatLng(27.7200, 85.3300)),
@@ -221,13 +220,13 @@ class MapspageState extends State<Mapspage> {
               ),
             ),
 
-            // Simple bottom sheet
+            // Simple bottom sheet (HEIGHT INCREASED to accommodate HorizontalPropertyListWidget's new total height)
             Positioned(
               left: 0,
               right: 0,
               bottom: 0,
               child: Container(
-                height: 220, // Fixed height
+                height: 300, // MODIFIED: Changed from 220 to 300 (220 for list + 80 for SizedBox)
                 decoration: const BoxDecoration(
                   color: Colors.white,
                   borderRadius: BorderRadius.only(
@@ -278,7 +277,7 @@ class MapspageState extends State<Mapspage> {
                       ),
                     ),
                     // Horizontal Property List
-                    Expanded(
+                    Expanded( // Use Expanded so the HorizontalPropertyListWidget takes available space within 300px
                       child: HorizontalPropertyListWidget(
                         controller: propertyController,
                       ),
@@ -288,10 +287,10 @@ class MapspageState extends State<Mapspage> {
               ),
             ),
 
-            // Floating Action Button positioned above the sheet
+            // Floating Action Button positioned above the sheet (ADJUSTED BOTTOM POSITION)
             Positioned(
               right: 16,
-              bottom: 240 + bottomPadding, // Position above the fixed sheet
+              bottom: 320 + bottomPadding, // MODIFIED: Changed from 240 to 320 (300 for new sheet height + 20 spacing)
               child: FloatingActionButton.extended(
                 onPressed: () {
                   Get.to(() => PropertyListScreen());
