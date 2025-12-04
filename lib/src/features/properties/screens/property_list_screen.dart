@@ -40,7 +40,7 @@ class PropertyListScreen extends StatelessWidget {
             children: [
               // Dark indigo background
               Container(
-                height:160,
+                height: 160,
                 width: double.infinity,
                 decoration: const BoxDecoration(
                   color: Color(0xFF4C3E71),
@@ -53,7 +53,7 @@ class PropertyListScreen extends StatelessWidget {
 
               // White card with location and chips
               Positioned(
-                bottom:15,
+                bottom: 15,
                 left: 20,
                 right: 20,
                 child: Container(
@@ -94,9 +94,9 @@ class PropertyListScreen extends StatelessWidget {
                               vertical: 14,
                             ),
                             prefixIcon: Icon(
-                                Icons.location_pin,
-                                color: Colors.grey[600],
-                                size:20
+                              Icons.location_pin,
+                              color: Colors.grey[600],
+                              size: 20,
                             ),
                           ),
                         ),
@@ -116,7 +116,6 @@ class PropertyListScreen extends StatelessWidget {
                             const SizedBox(width: 3),
                             _buildFilterChip('Industrial'),
                             const SizedBox(width: 3),
-
                           ],
                         ),
                       ),
@@ -151,7 +150,11 @@ class PropertyListScreen extends StatelessWidget {
                     child: Column(
                       mainAxisAlignment: MainAxisAlignment.center,
                       children: [
-                        const Icon(Icons.error_outline, size: 64, color: Colors.red),
+                        const Icon(
+                          Icons.error_outline,
+                          size: 64,
+                          color: Colors.red,
+                        ),
                         const SizedBox(height: 16),
                         Text(
                           controller.errorMessage.value,
@@ -345,7 +348,7 @@ class PropertyListScreen extends StatelessWidget {
 
                     const SizedBox(width: 16),
 
-                    // Right side - Rent and Availability
+                    // Right side - Rent and Booking Button
                     Column(
                       crossAxisAlignment: CrossAxisAlignment.end,
                       children: [
@@ -370,8 +373,8 @@ class PropertyListScreen extends StatelessWidget {
                         ),
                         const SizedBox(height: 8),
 
-                        // Availability Status
-                        _buildAvailabilityStatus(property.isActive ?? true),
+                        // BOOK NOW BUTTON or Booked Status
+                        _buildBookingButton(property),
                       ],
                     ),
                   ],
@@ -382,6 +385,82 @@ class PropertyListScreen extends StatelessWidget {
         ),
       ),
     );
+  }
+
+  // Booking Button Component
+  Widget _buildBookingButton(PropertyModel property) {
+    // Check if property is available for booking
+    final isAvailable = property.isAvailableForBooking;
+    final isBooked = !(property.isActive ?? true);
+
+    if (isBooked) {
+      // Show Booked status
+      return Container(
+        padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
+        decoration: BoxDecoration(
+          color: Colors.red[50],
+          borderRadius: BorderRadius.circular(8),
+          border: Border.all(color: Colors.red),
+        ),
+        child: const Text(
+          'Booked',
+          style: TextStyle(
+            color: Colors.red,
+            fontSize: 12,
+            fontWeight: FontWeight.w500,
+          ),
+        ),
+      );
+    } else if (isAvailable) {
+      // Show Book Now button
+      return Obx(() => ElevatedButton(
+        onPressed: controller.isBooking.value
+            ? null
+            : () {
+          controller.showBookingDialog(property);
+        },
+        style: ElevatedButton.styleFrom(
+          backgroundColor: const Color(0xFF4C3E71),
+          shape: RoundedRectangleBorder(
+            borderRadius: BorderRadius.circular(8),
+          ),
+          padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
+        ),
+        child: controller.isBooking.value
+            ? const SizedBox(
+          height: 20,
+          width: 20,
+          child: CircularProgressIndicator(
+            strokeWidth: 2,
+            valueColor: AlwaysStoppedAnimation<Color>(Colors.white),
+          ),
+        )
+            : const Text(
+          'Book Now',
+          style: TextStyle(
+            color: Colors.white,
+            fontSize: 14,
+            fontWeight: FontWeight.w600,
+          ),
+        ),
+      ));
+    } else {
+      // Show Unavailable status
+      return Container(
+        padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
+        decoration: BoxDecoration(
+          color: Colors.grey[300],
+          borderRadius: BorderRadius.circular(8),
+        ),
+        child: const Text(
+          'Unavailable',
+          style: TextStyle(
+            color: Colors.grey,
+            fontSize: 12,
+          ),
+        ),
+      );
+    }
   }
 
   // Property Image Component
@@ -487,32 +566,6 @@ class PropertyListScreen extends StatelessWidget {
     );
   }
 
-  // Availability Status Component
-  Widget _buildAvailabilityStatus(bool isAvailable) {
-    return Row(
-      mainAxisSize: MainAxisSize.min,
-      children: [
-        Container(
-          width: 12,
-          height: 12,
-          decoration: BoxDecoration(
-            color: isAvailable ? Colors.green : Colors.red,
-            shape: BoxShape.circle,
-          ),
-        ),
-        const SizedBox(width: 6),
-        Text(
-          isAvailable ? "Available" : "Booked",
-          style: TextStyle(
-            fontSize: 12,
-            color: isAvailable ? Colors.green : Colors.red,
-            fontWeight: FontWeight.w500,
-          ),
-        ),
-      ],
-    );
-  }
-
   // Helper method to determine property type from title
   String _getPropertyType(String title) {
     if (title.toLowerCase().contains('hall')) {
@@ -527,4 +580,252 @@ class PropertyListScreen extends StatelessWidget {
       return 'Property';
     }
   }
+}
+
+// Booking Confirmation Dialog Widget (Add this at the bottom of the file)
+class BookingConfirmationDialog extends StatefulWidget {
+  final PropertyModel property;
+  final Function(DateTime, DateTime) onConfirm;
+
+  const BookingConfirmationDialog({
+    super.key,
+    required this.property,
+    required this.onConfirm,
+  });
+
+  @override
+  State<BookingConfirmationDialog> createState() =>
+      _BookingConfirmationDialogState();
+}
+
+class _BookingConfirmationDialogState extends State<BookingConfirmationDialog> {
+  DateTime? _startDate;
+  DateTime? _endDate;
+  final PropertyController _controller = Get.find<PropertyController>();
+
+  @override
+  Widget build(BuildContext context) {
+    final property = widget.property;
+
+    return AlertDialog(
+      title: Row(
+        children: [
+          const Icon(Icons.home, color: Color(0xFF4C3E71)),
+          const SizedBox(width: 10),
+          Expanded(
+            child: Text(
+              'Book ${property.propertyTitle ?? 'Property'}',
+              style:
+              const TextStyle(fontSize: 18, fontWeight: FontWeight.bold),
+            ),
+          ),
+        ],
+      ),
+      content: SingleChildScrollView(
+        child: Column(
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            // Property Info
+            Card(
+              color: const Color(0xFFF3E5F5),
+              child: Padding(
+                padding: const EdgeInsets.all(12),
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    Text(
+                      property.propertyTitle ?? 'Untitled Property',
+                      style: const TextStyle(
+                        fontWeight: FontWeight.bold,
+                        fontSize: 16,
+                      ),
+                    ),
+                    const SizedBox(height: 5),
+                    Text(
+                      'Rs.${property.rent ?? '0'}/month',
+                      style: const TextStyle(
+                        color: Colors.green,
+                        fontWeight: FontWeight.w600,
+                      ),
+                    ),
+                    if (property.location?.city != null)
+                      Padding(
+                        padding: const EdgeInsets.only(top: 5),
+                        child: Text(
+                          property.location!.city!,
+                          style: const TextStyle(
+                              fontSize: 12, color: Colors.grey),
+                        ),
+                      ),
+                  ],
+                ),
+              ),
+            ),
+
+            const SizedBox(height: 20),
+
+            // Date Pickers
+            Column(
+              children: [
+                // Start Date
+                InkWell(
+                  onTap: () async {
+                    final picked = await showDatePicker(
+                      context: context,
+                      initialDate: DateTime.now(),
+                      firstDate: DateTime.now(),
+                      lastDate: DateTime.now().add(const Duration(days: 365)),
+                    );
+                    if (picked != null) {
+                      setState(() => _startDate = picked);
+                    }
+                  },
+                  child: Container(
+                    padding: const EdgeInsets.all(12),
+                    decoration: BoxDecoration(
+                      border: Border.all(color: Colors.grey.shade300),
+                      borderRadius: BorderRadius.circular(8),
+                    ),
+                    child: Row(
+                      children: [
+                        const Icon(Icons.calendar_today,
+                            color: Color(0xFF4C3E71)),
+                        const SizedBox(width: 10),
+                        Expanded(
+                          child: Text(
+                            _startDate == null
+                                ? 'Select move-in date'
+                                : 'Move-in: ${_startDate!.day}/${_startDate!.month}/${_startDate!.year}',
+                          ),
+                        ),
+                      ],
+                    ),
+                  ),
+                ),
+
+                const SizedBox(height: 15),
+
+                // End Date
+                InkWell(
+                  onTap: () async {
+                    final firstDate = _startDate ?? DateTime.now();
+                    final picked = await showDatePicker(
+                      context: context,
+                      initialDate: firstDate.add(const Duration(days: 30)),
+                      firstDate: firstDate,
+                      lastDate: firstDate.add(const Duration(days: 365)),
+                    );
+                    if (picked != null) {
+                      setState(() => _endDate = picked);
+                    }
+                  },
+                  child: Container(
+                    padding: const EdgeInsets.all(12),
+                    decoration: BoxDecoration(
+                      border: Border.all(color: Colors.grey.shade300),
+                      borderRadius: BorderRadius.circular(8),
+                    ),
+                    child: Row(
+                      children: [
+                        const Icon(Icons.calendar_today_outlined,
+                            color: Color(0xFF4C3E71)),
+                        const SizedBox(width: 10),
+                        Expanded(
+                          child: Text(
+                            _endDate == null
+                                ? 'Select move-out date'
+                                : 'Move-out: ${_endDate!.day}/${_endDate!.month}/${_endDate!.year}',
+                          ),
+                        ),
+                      ],
+                    ),
+                  ),
+                ),
+              ],
+            ),
+
+            // Rent Calculation
+            if (_startDate != null && _endDate != null && property.rent != null)
+              Padding(
+                padding: const EdgeInsets.only(top: 20),
+                child: Container(
+                  padding: const EdgeInsets.all(12),
+                  decoration: BoxDecoration(
+                    color: Colors.grey.shade50,
+                    borderRadius: BorderRadius.circular(8),
+                    border: Border.all(color: Colors.grey.shade200),
+                  ),
+                  child: Column(
+                    children: [
+                      Row(
+                        mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                        children: [
+                          const Text('Duration:'),
+                          Text(
+                              '${_calculateMonths(_startDate!, _endDate!)} month(s)'),
+                        ],
+                      ),
+                      const SizedBox(height: 8),
+                      const Divider(height: 1),
+                      const SizedBox(height: 8),
+                      Row(
+                        mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                        children: [
+                          const Text('Total Rent:',
+                              style: TextStyle(fontWeight: FontWeight.bold)),
+                          Text(
+                            'Rs.${property.rent! * _calculateMonths(_startDate!, _endDate!)}',
+                            style: const TextStyle(
+                              fontWeight: FontWeight.bold,
+                              color: Colors.green,
+                              fontSize: 16,
+                            ),
+                          ),
+                        ],
+                      ),
+                    ],
+                  ),
+                ),
+              ),
+          ],
+        ),
+      ),
+      actions: [
+        TextButton(
+          onPressed: () => Get.back(),
+          child: const Text('Cancel'),
+        ),
+        Obx(() => ElevatedButton(
+          onPressed: (_startDate != null &&
+              _endDate != null &&
+              !_controller.isBooking.value)
+              ? () {
+            widget.onConfirm(_startDate!, _endDate!);
+          }
+              : null,
+          style: ElevatedButton.styleFrom(
+            backgroundColor: const Color(0xFF4C3E71),
+          ),
+          child: _controller.isBooking.value
+              ? const SizedBox(
+            height: 20,
+            width: 20,
+            child: CircularProgressIndicator(
+              strokeWidth: 2,
+              valueColor: AlwaysStoppedAnimation<Color>(Colors.green),
+            ),
+          )
+              : const Text(
+                  'Confirm Booking',
+                  style: TextStyle(color: Colors.white),
+                ),
+        )),
+      ],
+    );
+  }
+
+  int _calculateMonths(DateTime start, DateTime end) {
+    final days = end.difference(start).inDays;
+    return (days / 30).ceil();
+    }
 }

@@ -89,4 +89,49 @@ class PropertyModel {
       'location': location?.toJson(),
     };
   }
+
+  // ✅ ADD THIS COPYWITH METHOD FOR BOOKING FUNCTIONALITY
+  PropertyModel copyWith({
+    String? id,
+    String? propertyTitle,
+    String? detailedDescription,
+    int? rent,
+    bool? isActive,
+    ImageModel? image,
+    LocationModel? location,
+    UserModel? user,
+    PropertyTypeModel? propertyType,
+    StatusModel? status,
+    DateTime? createdDate,
+    DateTime? updatedDate,
+    Future<Uint8List?>? imageFuture,
+  }) {
+    return PropertyModel(
+      id: id ?? this.id,
+      propertyTitle: propertyTitle ?? this.propertyTitle,
+      detailedDescription: detailedDescription ?? this.detailedDescription,
+      rent: rent ?? this.rent,
+      isActive: isActive ?? this.isActive,
+      image: image ?? this.image,
+      location: location ?? this.location,
+      user: user ?? this.user,
+      propertyType: propertyType ?? this.propertyType,
+      status: status ?? this.status,
+      createdDate: createdDate ?? this.createdDate,
+      updatedDate: updatedDate ?? this.updatedDate,
+      imageFuture: imageFuture ?? this.imageFuture,
+    );
+  }
+
+  // Optional: Helper method to check if property is available for booking
+  bool get isAvailableForBooking {
+    return isActive == true && id.isNotEmpty;
+  }
+
+  // Optional: Helper method to get display status
+  String get displayStatus {
+    if (isActive == true) return 'Available';
+    if (isActive == false) return 'Booked';
+    return 'Unknown';
+    }
 }
