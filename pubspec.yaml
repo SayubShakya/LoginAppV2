@@ -55,6 +55,7 @@ dev_dependencies:
   liquid_swipe: ^3.1.0
   smooth_page_indicator: ^1.2.1
   curved_navigation_bar: ^1.0.6
+  flutter_launcher_icons: ^0.14.1
 
 
 
@@ -74,5 +75,10 @@ flutter:
     - assets/logo/
     - assets/images/forgotPassword.png
     - assets/map_style.json
+
+flutter_launcher_icons:
+  android: true
+  ios: true
+  image_path: assets/images/GharSathiLogo.png
 
 

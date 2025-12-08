@@ -90,7 +90,7 @@ class _EsewaAppState extends State<EsewaApp> {
                     child: EsewaPayButton(
                       /// Example Use case - 1
                       paymentConfig: ESewaConfig.dev(
-                        amount: 10.0,
+                        amount: 25000.0,
                         successUrl: 'https://developer.esewa.com.np/success',
                         failureUrl: 'https://developer.esewa.com.np/failure',
                         secretKey: '8gBm/:&EnhH.1/q',

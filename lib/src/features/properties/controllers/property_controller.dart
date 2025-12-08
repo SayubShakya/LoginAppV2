@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:get/get.dart';
 import 'package:loginappv2/src/features/authentication/services/token_manager.dart';
 import 'package:loginappv2/src/features/booking/booking_service.dart';
+import 'package:loginappv2/src/features/booking/booking_list_screen.dart';
 
 import 'package:loginappv2/src/features/image_handle/image_handle_services.dart';
 import 'package:loginappv2/src/features/user_dashboard/screens/tenant_dashbaords/detail_screen.dart';
@@ -284,7 +285,10 @@ class PropertyController extends GetxController {
                   ),
                   actions: [
                     TextButton(
-                      onPressed: () => Get.back(),
+                      onPressed: () {
+                        Get.back();
+                        Get.to(() => BookingListScreen());
+                      },
                       child: const Text('OK'),
                     ),
                   ],
