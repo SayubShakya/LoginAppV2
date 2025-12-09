@@ -6,7 +6,6 @@ import 'package:loginappv2/src/features/user_dashboard/screens/landlord_dashboar
 import '../../properties/Repositories/property_repo.dart';
 import '../../properties/models/model_property.dart';
 
-
 // --- GetX Controller (Logic) ---
 class LandlordDashboardController extends GetxController {
   final PropertyService _propertyService = PropertyService();
@@ -23,6 +22,10 @@ class LandlordDashboardController extends GetxController {
   final RxBool hasError = false.obs;
   final RxString errorMessage = ''.obs;
 
+  // Search state
+  final TextEditingController searchCityController = TextEditingController();
+  final RxString searchCity = ''.obs;
+
   // Pagination
   final RxInt currentPage = 1.obs;
   final RxInt totalPages = 1.obs;
@@ -33,6 +36,12 @@ class LandlordDashboardController extends GetxController {
   void onInit() {
     super.onInit();
     fetchProperties();
+  }
+
+  @override
+  void onClose() {
+    searchCityController.dispose();
+    super.onClose();
   }
 
   Future<void> fetchProperties({bool loadMore = false}) async {
@@ -50,6 +59,7 @@ class LandlordDashboardController extends GetxController {
       final fetchedProperties = await _propertyService.getProperties(
         page: currentPage.value,
         limit: 10,
+        city: searchCity.value,
       );
 
       // Cache images for properties
@@ -170,6 +180,59 @@ class LandlordDashboardController extends GetxController {
     await fetchProperties(loadMore: false);
   }
 
+  Future<void> searchByCity(String city) async {
+    final trimmed = city.trim();
+    searchCity.value = trimmed;
+
+    if (trimmed.isEmpty) {
+      // Empty search -> reset to full list
+      await refreshProperties();
+      return;
+    }
+
+    try {
+      isLoading.value = true;
+      hasError.value = false;
+      currentPage.value = 1;
+
+      print(
+          '🔄 LandlordDashboardController: Searching properties by city: $trimmed');
+
+      final fetchedProperties = await _propertyService.getProperties(
+        page: currentPage.value,
+        limit: 10,
+        city: trimmed,
+      );
+
+      // Cache images for properties
+      for (var property in fetchedProperties) {
+        final filename = property.image?.filename;
+        if (filename != null && filename.isNotEmpty) {
+          property.imageFuture = _imageService.fetchImage(filename);
+        }
+      }
+
+      properties.value = fetchedProperties;
+      totalItems.value = properties.length;
+
+      print(
+          '✅ LandlordDashboardController: Search loaded ${fetchedProperties.length} properties');
+    } catch (e) {
+      print('❌ LandlordDashboardController Search Error: $e');
+      hasError.value = true;
+      errorMessage.value = e.toString();
+
+      Get.snackbar(
+        'Error',
+        'Failed to search properties: ${e.toString().replaceAll('Exception: ', '')}',
+        snackPosition: SnackPosition.BOTTOM,
+      );
+    } finally {
+      isLoading.value = false;
+      isLoadMore.value = false;
+    }
+  }
+
   void loadMoreProperties() {
     if (!isLoadMore.value && currentPage.value < totalPages.value) {
       currentPage.value++;
@@ -217,5 +280,5 @@ class LandlordDashboardController extends GetxController {
   void onPropertyItemTapped(PropertyModel property) {
     print('Property ${property.propertyTitle} tapped.');
     // Navigate to property detail screen
-    }
+  }
 }

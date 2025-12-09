@@ -9,16 +9,31 @@ import 'package:loginappv2/src/features/authentication/screens/login/login_scree
 
 // Controllers & Models
 import 'package:loginappv2/src/features/authentication/controllers/signup_controller.dart';
+import 'package:loginappv2/src/features/authentication/services/sign_up_services.dart';
 import 'package:loginappv2/src/features/user_credentials/controllers/role_controller.dart';
 import 'package:loginappv2/src/features/user_credentials/models/roles_model.dart';
+import 'package:loginappv2/src/features/user_credentials/services/role_services.dart';
 
 class SignupScreen extends StatelessWidget {
   const SignupScreen({super.key});
 
   @override
   Widget build(BuildContext context) {
-    final signUpController = Get.find<SignUpController>();
-    final roleController = Get.find<RoleController>();
+    final signUpRepository = Get.isRegistered<SignUpRepository>()
+        ? Get.find<SignUpRepository>()
+        : Get.put(SignUpRepository());
+
+    final signUpController = Get.isRegistered<SignUpController>()
+        ? Get.find<SignUpController>()
+        : Get.put(SignUpController(signUpRepository: signUpRepository));
+
+    final roleRepository = Get.isRegistered<RoleRepository>()
+        ? Get.find<RoleRepository>()
+        : Get.put(RoleRepository());
+
+    final roleController = Get.isRegistered<RoleController>()
+        ? Get.find<RoleController>()
+        : Get.put(RoleController(roleRepository: roleRepository));
 
     final GlobalKey<FormState> _formkey = GlobalKey<FormState>();
 

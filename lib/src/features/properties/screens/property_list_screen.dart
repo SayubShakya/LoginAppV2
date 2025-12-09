@@ -2,8 +2,9 @@
 
 import 'package:flutter/material.dart';
 import 'package:get/get.dart';
+import 'package:loginappv2/src/features/properties/controllers/property_controller.dart';
 import 'dart:typed_data';
-import '../controllers/property_controller.dart';
+
 import '../models/model_property.dart';
 
 class PropertyListScreen extends StatelessWidget {
@@ -71,7 +72,7 @@ class PropertyListScreen extends StatelessWidget {
                   padding: const EdgeInsets.all(16),
                   child: Column(
                     children: [
-                      // Location input only
+                      // Location input with search by city
                       Container(
                         decoration: BoxDecoration(
                           color: Colors.grey[50],
@@ -82,8 +83,9 @@ class PropertyListScreen extends StatelessWidget {
                           ),
                         ),
                         child: TextField(
+                          controller: controller.searchCityController,
                           decoration: InputDecoration(
-                            hintText: 'Lalitpur, Kathmandu',
+                            hintText: 'Search by city (e.g. Kathmandu)',
                             hintStyle: TextStyle(
                               color: Colors.grey[600],
                               fontSize: 16,
@@ -98,7 +100,18 @@ class PropertyListScreen extends StatelessWidget {
                               color: Colors.grey[600],
                               size: 20,
                             ),
+                            suffixIcon: IconButton(
+                              icon: const Icon(Icons.search),
+                              color: Colors.grey[600],
+                              onPressed: () {
+                                controller.searchByCity(
+                                  controller.searchCityController.text,
+                                );
+                              },
+                            ),
                           ),
+                          textInputAction: TextInputAction.search,
+                          onSubmitted: (value) => controller.searchByCity(value),
                         ),
                       ),
 
@@ -816,9 +829,9 @@ class _BookingConfirmationDialogState extends State<BookingConfirmationDialog> {
             ),
           )
               : const Text(
-                  'Confirm Booking',
-                  style: TextStyle(color: Colors.white),
-                ),
+            'Confirm Booking',
+            style: TextStyle(color: Colors.white),
+          ),
         )),
       ],
     );
@@ -827,5 +840,5 @@ class _BookingConfirmationDialogState extends State<BookingConfirmationDialog> {
   int _calculateMonths(DateTime start, DateTime end) {
     final days = end.difference(start).inDays;
     return (days / 30).ceil();
-    }
+  }
 }

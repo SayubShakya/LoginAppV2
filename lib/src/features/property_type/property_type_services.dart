@@ -7,7 +7,7 @@ class PropertyTypeService {
   final Dio _dio = Dio();
   final storage = GetStorage();
 
-  final String baseUrl = "http://192.168.1.82:5000/api";
+  final String baseUrl = "http://10.10.10.253:5000/api";
 
   Future<List<PropertyTypeModel>> getPropertyTypes() async {
     try {

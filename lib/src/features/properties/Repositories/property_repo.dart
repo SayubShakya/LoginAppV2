@@ -6,12 +6,22 @@ import '../models/model_property.dart';
 class PropertyService {
   final Dio _dio = ApiClient().dio;
 
-  Future<List<PropertyModel>> getProperties({int page = 1, int limit = 5}) async {
+  Future<List<PropertyModel>> getProperties({
+    int page = 1,
+    int limit = 5,
+    String? city,
+  }) async {
     try {
-      final response = await _dio.get("/properties", queryParameters: {
+      final Map<String, dynamic> query = {
         "page": page,
         "limit": limit,
-      });
+      };
+
+      if (city != null && city.isNotEmpty) {
+        query["city"] = city;
+      }
+
+      final response = await _dio.get("/properties", queryParameters: query);
       // final response = await _dio.get("/users", queryParameters: {
       //   "page": page,
       //   "limit": limit,
@@ -41,4 +51,4 @@ class PropertyService {
       throw Exception('Failed to fetch property: $e');
     }
   }
-  }
+}

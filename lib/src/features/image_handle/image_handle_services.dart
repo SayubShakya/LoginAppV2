@@ -9,7 +9,7 @@ import 'package:loginappv2/src/features/authentication/services/token_manager.da
 
 class ImageService {
   // Use the IP address, replacing 'localhost'
-  static const String _serverBaseUrl = 'http://192.168.1.82:5000';
+  static const String _serverBaseUrl = 'http://10.10.10.253:5000';
 
   // Endpoint for POST (Uploading the image)
   static const String _uploadUrl = '$_serverBaseUrl/api/images/upload-image';
@@ -38,10 +38,9 @@ class ImageService {
       }
 
       request.files.add(
-        http.MultipartFile(
-          'file', // Key must match the backend field name
-          imageFile.readAsBytes().asStream(),
-          imageFile.lengthSync(),
+        await http.MultipartFile.fromPath(
+          'file',
+          imageFile.path,
           filename: basename(imageFile.path),
         ),
       );
@@ -49,23 +48,25 @@ class ImageService {
       print('📤 ImageService: Sending image upload request...');
       var response = await request.send();
 
-      print('📡 ImageService: Upload response status: ${response.statusCode}');
+      final statusCode = response.statusCode;
+      final responseBody = await response.stream.bytesToString();
 
-      if (response.statusCode == 200) {
-        var responseData = await response.stream.bytesToString();
-        final decoded = jsonDecode(responseData);
+      print('📡 ImageService: Upload response status: $statusCode');
+      print('📡 ImageService: Upload response body: $responseBody');
 
-        // **CRITICAL CHANGE:** Returning the filename, which is needed for fetching.
+      if (statusCode >= 200 && statusCode < 300) {
+        final decoded = jsonDecode(responseBody);
+
         // The JSON response contains: "image": { "filename": "..." }
         final filename = decoded['image']['filename'] as String?;
         print('✅ ImageService: Image uploaded successfully: $filename');
         return filename;
-      } else if (response.statusCode == 401) {
+      } else if (statusCode == 401) {
         print('❌ ImageService: Unauthorized - Token might be invalid or expired');
-        throw Exception('Authentication failed. Please login again.');
+        throw Exception('Authentication failed. Please login again. Response: $responseBody');
       } else {
-        print('❌ ImageService: Failed to upload image. Status: ${response.statusCode}');
-        throw Exception('Failed to upload image: ${response.statusCode}');
+        print('❌ ImageService: Failed to upload image. Status: $statusCode');
+        throw Exception('Failed to upload image: $statusCode. Response: $responseBody');
       }
     } catch (e) {
       print('❌ ImageService: Error uploading image: $e');

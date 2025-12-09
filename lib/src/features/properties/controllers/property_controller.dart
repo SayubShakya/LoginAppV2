@@ -21,6 +21,10 @@ class PropertyController extends GetxController {
   var isBooking = false.obs;
   var bookedProperties = <String>[].obs; // Track booked property IDs
 
+  // Search state for tenant marketplace (by city)
+  final TextEditingController searchCityController = TextEditingController();
+  var searchCity = ''.obs;
+
   @override
   void onInit() {
     super.onInit();
@@ -29,7 +33,13 @@ class PropertyController extends GetxController {
     _loadBookedProperties();
   }
 
-  Future<void> fetchProperties({int page = 1, int limit = 5}) async {
+  @override
+  void onClose() {
+    searchCityController.dispose();
+    super.onClose();
+  }
+
+  Future<void> fetchProperties({int page = 1, int limit = 5, String? city}) async {
     try {
       print('🔄 PropertyController: Starting fetch...');
 
@@ -39,7 +49,11 @@ class PropertyController extends GetxController {
 
       await _debugTokenCheck();
 
-      final properties = await _service.getProperties(page: page, limit: limit);
+      final properties = await _service.getProperties(
+        page: page,
+        limit: limit,
+        city: city,
+      );
 
       // Cache the image future and check booking status
       for (var property in properties) {
@@ -112,6 +126,19 @@ class PropertyController extends GetxController {
       throw Exception(
         'Failed to load property details: ${e.toString().replaceAll('Exception: ', '')}',
       );
+    }
+  }
+
+  // --- SEARCH BY CITY (Tenant marketplace) ---
+  Future<void> searchByCity(String city) async {
+    final trimmed = city.trim();
+    searchCity.value = trimmed;
+
+    if (trimmed.isEmpty) {
+      // Empty search -> reload all properties without city filter
+      await fetchProperties(page: 1, limit: 5, city: null);
+    } else {
+      await fetchProperties(page: 1, limit: 5, city: trimmed);
     }
   }
 
@@ -215,7 +242,7 @@ class PropertyController extends GetxController {
     try {
       print('🔄 Navigating to property detail: ${property.id}');
       Get.to(
-        () => PropertyDetailScreen(
+            () => PropertyDetailScreen(
           propertyId: property.id,
           initialProperty: property, // Pass the object for immediate display
         ),
@@ -584,31 +611,31 @@ class _BookingConfirmationDialogState extends State<BookingConfirmationDialog> {
       actions: [
         TextButton(onPressed: () => Get.back(), child: const Text('Cancel')),
         Obx(
-          () => ElevatedButton(
+              () => ElevatedButton(
             onPressed:
-                (_startDate != null &&
-                    _endDate != null &&
-                    !_controller.isBooking.value)
+            (_startDate != null &&
+                _endDate != null &&
+                !_controller.isBooking.value)
                 ? () {
-                    widget.onConfirm(_startDate!, _endDate!);
-                  }
+              widget.onConfirm(_startDate!, _endDate!);
+            }
                 : null,
             style: ElevatedButton.styleFrom(
               backgroundColor: const Color(0xFF4C3E71),
             ),
             child: _controller.isBooking.value
                 ? const SizedBox(
-                    height: 20,
-                    width: 20,
-                    child: CircularProgressIndicator(
-                      strokeWidth: 2,
-                      valueColor: AlwaysStoppedAnimation<Color>(Colors.white),
-                    ),
-                  )
+              height: 20,
+              width: 20,
+              child: CircularProgressIndicator(
+                strokeWidth: 2,
+                valueColor: AlwaysStoppedAnimation<Color>(Colors.white),
+              ),
+            )
                 : const Text(
-                    'Confirm Booking',
-                    style: TextStyle(color: Colors.white),
-                  ),
+              'Confirm Booking',
+              style: TextStyle(color: Colors.white),
+            ),
           ),
         ),
       ],

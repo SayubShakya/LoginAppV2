@@ -43,6 +43,48 @@ class LandlordDashboardScreen extends StatelessWidget {
           return _buildLoadingState();
         }
 
+        Widget _buildSearchBar() {
+          return Container(
+            width: double.infinity,
+            padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 10),
+            decoration: BoxDecoration(
+              color: cardWhite,
+              borderRadius: BorderRadius.circular(12),
+              boxShadow: [
+                BoxShadow(
+                  color: Colors.grey.withOpacity(0.15),
+                  blurRadius: 10,
+                  offset: const Offset(0, 4),
+                ),
+              ],
+            ),
+            child: Row(
+              children: [
+                const Icon(Icons.location_on, color: textSecondary),
+                const SizedBox(width: 8),
+                Expanded(
+                  child: TextField(
+                    controller: controller.searchCityController,
+                    decoration: const InputDecoration(
+                      hintText: 'Search by city (e.g. Kathmandu)',
+                      border: InputBorder.none,
+                    ),
+                    style: const TextStyle(color: textPrimary, fontSize: 14),
+                    textInputAction: TextInputAction.search,
+                    onSubmitted: (value) => controller.searchByCity(value),
+                  ),
+                ),
+                IconButton(
+                  icon: const Icon(Icons.search, color: textSecondary),
+                  onPressed: () {
+                    controller.searchByCity(controller.searchCityController.text);
+                  },
+                ),
+              ],
+            ),
+          );
+        }
+
         if (controller.hasError.value && controller.properties.isEmpty) {
           return _buildErrorState();
         }
@@ -57,6 +99,8 @@ class LandlordDashboardScreen extends StatelessWidget {
               children: [
                 _buildWelcomeCard(),
                 const SizedBox(height: 24),
+                _buildSearchBar(),
+                const SizedBox(height: 20),
                 _buildHeaderSection(),
                 const SizedBox(height: 20),
                 _buildPropertyTable(),
@@ -220,7 +264,7 @@ class LandlordDashboardScreen extends StatelessWidget {
                 ),
                 const SizedBox(height: 8),
                 Obx(
-                  () => Text(
+                      () => Text(
                     'You have ${controller.totalItems.value} properties listed',
                     style: const TextStyle(color: Colors.white70, fontSize: 14),
                   ),

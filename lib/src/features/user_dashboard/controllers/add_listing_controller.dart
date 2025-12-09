@@ -3,6 +3,7 @@ import 'package:flutter/material.dart';
 import 'package:get/get.dart';
 import 'package:image_picker/image_picker.dart';
 import 'package:geocoding/geocoding.dart';
+
 import 'package:loginappv2/src/features/image_handle/image_handle_services.dart';
 import 'package:loginappv2/src/features/user_dashboard/models/location/model_location.dart';
 
@@ -13,6 +14,7 @@ import 'package:loginappv2/src/features/user_dashboard/services/property_service
 import 'package:loginappv2/src/features/property_type/property_type_model.dart';
 import 'package:loginappv2/src/features/authentication/models/user_model.dart';
 import 'package:loginappv2/src/features/image_handle/image_handle_model.dart';
+import 'package:loginappv2/src/features/user_dashboard/controllers/landlord_dashboard_controller.dart';
 
 import '../../properties/models/model_property.dart';
 
@@ -54,26 +56,40 @@ class AddListingController extends GetxController {
   }
 
   // Load dropdown data
-  void loadDropdownData() {
+  Future<void> loadDropdownData() async {
     statusList.assignAll([
-      DropdownItem(id: 'available', name: 'Available'),
-      DropdownItem(id: 'rented', name: 'Rented'),
-      DropdownItem(id: 'under_maintenance', name: 'Under Maintenance'),
+      DropdownItem(id: 'available', name: 'AVAILABLE'),
+      DropdownItem(id: 'rented', name: 'BOOKED'),
     ]);
 
-    propertyTypeList.assignAll([
-      DropdownItem(id: 'apartment', name: 'Apartment'),
-      DropdownItem(id: 'house', name: 'House'),
-      DropdownItem(id: 'room', name: 'Room'),
-      DropdownItem(id: 'commercial', name: 'Commercial'),
-    ]);
+    try {
+      final types = await _propertyService.getPropertyTypes();
+      propertyTypeList.assignAll(
+        types
+            .map((t) => DropdownItem(id: t.id, name: t.name))
+            .toList(),
+      );
+    } catch (e) {
+      propertyTypeList.assignAll([
+        DropdownItem(id: 'apartment', name: 'Apartment'),
+        DropdownItem(id: 'house', name: 'House'),
+        DropdownItem(id: 'room', name: 'Room'),
+        DropdownItem(id: 'commercial', name: 'Commercial'),
+      ]);
+    }
   }
 
   // --- Image Picker ---
   Future<void> pickCoverImage(ImageSource source) async {
     try {
       final picker = ImagePicker();
-      final XFile? pickedFile = await picker.pickImage(source: source, imageQuality: 80);
+
+      final XFile? pickedFile = await picker.pickImage(
+        source: source,
+        imageQuality: 65,
+        maxWidth: 1920,
+        maxHeight: 1920,
+      );
       if (pickedFile != null) {
         coverImage.value = File(pickedFile.path);
       } else {
@@ -178,19 +194,44 @@ class AddListingController extends GetxController {
 
     try {
       String? imageUrl;
+      String? imageId;
+      String? imageFilename;
 
       // --- Image Upload Section ---
       if (coverImage.value != null) {
         try {
           print('🔄 Starting image upload...');
-          final filename = await _imageService.uploadImage(coverImage.value!);
 
-          if (filename != null && filename.isNotEmpty) {
-            imageUrl = 'http://192.168.1.82:5000/uploads/$filename';
-            print('✅ Image uploaded successfully: $imageUrl');
+          // Use PropertyService upload so we get both image_id and image object
+          final uploadResponse =
+          await _propertyService.uploadImage(coverImage.value!.path);
+
+          if (uploadResponse != null) {
+            imageId = uploadResponse['image_id']?.toString();
+
+            final imageJson = uploadResponse['image'] as Map<String, dynamic>?;
+            imageFilename = imageJson != null
+                ? imageJson['filename']?.toString()
+                : null;
+
+            if (imageFilename != null && imageFilename!.isNotEmpty) {
+              imageUrl = 'http://10.10.10.253:5000/uploads/$imageFilename';
+              print('✅ Image uploaded successfully: $imageUrl (id: $imageId)');
+            } else {
+              Get.snackbar(
+                'Error',
+                'Failed to upload image - no filename returned',
+                snackPosition: SnackPosition.BOTTOM,
+              );
+              isLoading.value = false;
+              return;
+            }
           } else {
-            Get.snackbar('Error', 'Failed to upload image - no filename returned',
-                snackPosition: SnackPosition.BOTTOM);
+            Get.snackbar(
+              'Error',
+              'Failed to upload image - empty response',
+              snackPosition: SnackPosition.BOTTOM,
+            );
             isLoading.value = false;
             return;
           }
@@ -212,7 +253,14 @@ class AddListingController extends GetxController {
         detailedDescription: detailedDescriptionController.text,
         rent: int.tryParse(rentController.text) ?? 0,
         isActive: true,
-        image: imageUrl != null ? ImageModel(path: imageUrl) : null,
+        image: imageUrl != null
+            ? ImageModel(
+          id: imageId,
+          path: imageUrl,
+          filename: imageFilename,
+          isActive: true,
+        )
+            : null,
         propertyType: PropertyTypeModel(
           id: selectedPropertyType.value,
           name: '',
@@ -242,19 +290,35 @@ class AddListingController extends GetxController {
       final createdProperty = await _propertyService.createProperty(newProperty);
 
       if (createdProperty != null) {
-        Get.snackbar('Success', 'Property listed successfully!',
-            snackPosition: SnackPosition.BOTTOM,
-            backgroundColor: Colors.green,
-            colorText: Colors.white,
-            duration: Duration(seconds: 3));
         clearForm();
-        Get.back();
+
+        Get.dialog(
+          AlertDialog(
+            title: const Text('Success'),
+            content: const Text('Property listed successfully!'),
+            actions: [
+              TextButton(
+                onPressed: () async {
+                  Get.back(); // Close dialog
+
+                  if (Get.isRegistered<LandlordDashboardController>()) {
+                    final dashboardController =
+                    Get.find<LandlordDashboardController>();
+                    await dashboardController.refreshProperties();
+                  }
+
+                  Get.back(); // Navigate back to landlord dashboard
+                },
+                child: const Text('OK'),
+              ),
+            ],
+          ),
+        );
       } else {
         Get.snackbar('Error', 'Failed to list property',
             snackPosition: SnackPosition.BOTTOM,
             duration: Duration(seconds: 3));
       }
-
     } catch (e) {
       print('❌ Property creation error: $e');
       Get.snackbar('Error', 'Failed to create property: $e',

@@ -75,7 +75,7 @@ class PropertyModel {
     );
   }
 
-  // 🌟 JUST ADD THIS METHOD - Everything else stays the same
+  // JUST ADD THIS METHOD - Everything else stays the same
   Map<String, dynamic> toJson() {
     return {
       'property_title': propertyTitle,
@@ -83,6 +83,7 @@ class PropertyModel {
       'rent': rent,
       'is_active': isActive ?? true,
       'cover_image_url': image?.path,
+      'image_id': image?.id,
       'property_types_id': propertyType?.id,
       'user_id': user?.id,
       'status_id': status?.id,
@@ -90,7 +91,7 @@ class PropertyModel {
     };
   }
 
-  // ✅ ADD THIS COPYWITH METHOD FOR BOOKING FUNCTIONALITY
+  // ADD THIS COPYWITH METHOD FOR BOOKING FUNCTIONALITY
   PropertyModel copyWith({
     String? id,
     String? propertyTitle,
@@ -133,5 +134,5 @@ class PropertyModel {
     if (isActive == true) return 'Available';
     if (isActive == false) return 'Booked';
     return 'Unknown';
-    }
+  }
 }
